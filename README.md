@@ -1,36 +1,53 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Craftyso
 
-## Getting Started
+Modern storefront + ops dashboard for craftyso.co.il, replacing the legacy Folyou-hosted site.
+Next.js (App Router) on Firebase (Firestore, Auth, Storage), Grow for payments.
 
-First, run the development server:
+## Setup
 
 ```bash
+npm install
+cp .env.example .env.local   # fill in Firebase web config + service account
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Firebase service account (required for the admin dashboard / server data)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Firebase Console → Project settings → Service accounts → Generate new private key, then set in
+`.env.local`:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
+FIREBASE_PROJECT_ID=craftyso
+FIREBASE_CLIENT_EMAIL=...
+FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
+```
 
-## Learn More
+### Create your first admin user
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+npm run create:admin -- you@example.com yourpassword
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Then log in at `/admin/login`.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Load some data
 
-## Deploy on Vercel
+```bash
+npm run seed:sample          # a few real sample products, for a quick demo
+npm run scrape:catalog -- --category=iron-on-patches   # test one category
+npm run scrape:catalog       # full migration from the live site
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Deploy security rules
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+firebase deploy --only firestore:rules,storage
+```
+
+## Structure
+
+- `app/(store)/...` — public storefront (Hebrew/RTL)
+- `app/admin/...` — internal dashboard (orders, leads, products, content, campaigns, social)
+- `lib/firebase/` — client + admin SDK wiring, data queries
+- `lib/grow/` — Grow payment gateway integration (pending real merchant credentials)
+- `scripts/` — one-off migration/seeding scripts (not part of the deployed app)
