@@ -1,6 +1,6 @@
 import "server-only";
 import { adminDb } from "./admin";
-import type { Campaign, ContentPage, Lead, Order, Product, SocialPost } from "@/lib/types";
+import type { AdminUser, Campaign, ContentPage, Lead, Order, Product, SocialPost } from "@/lib/types";
 
 async function safe<T>(fn: () => Promise<T>, fallback: T): Promise<T> {
   try {
@@ -54,5 +54,12 @@ export async function listContentPages(): Promise<ContentPage[]> {
   return safe(async () => {
     const snap = await adminDb.collection("content").orderBy("updatedAt", "desc").limit(200).get();
     return snap.docs.map((d) => withId<ContentPage>(d));
+  }, []);
+}
+
+export async function listAdmins(): Promise<AdminUser[]> {
+  return safe(async () => {
+    const snap = await adminDb.collection("users").get();
+    return snap.docs.map((d) => d.data() as AdminUser);
   }, []);
 }

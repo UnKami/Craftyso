@@ -11,6 +11,7 @@ const NAV = [
   { href: "/admin/content", label: "תוכן" },
   { href: "/admin/campaigns", label: "קמפיינים" },
   { href: "/admin/social", label: "רשתות חברתיות" },
+  { href: "/admin/team", label: "צוות" },
 ];
 
 export function Sidebar({ email }: { email: string }) {

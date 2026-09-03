@@ -32,4 +32,10 @@ export async function requireAdmin(): Promise<AdminUser> {
   return user;
 }
 
+export async function requireOwner(): Promise<AdminUser> {
+  const user = await getAdminUser();
+  if (!user || user.role !== "owner") throw new Error("Unauthorized: owner role required");
+  return user;
+}
+
 export { SESSION_COOKIE };
