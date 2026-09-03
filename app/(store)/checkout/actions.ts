@@ -1,6 +1,7 @@
 "use server";
 
 import { adminDb } from "@/lib/firebase/admin";
+import { getSessionUser } from "@/lib/auth/session";
 import { createPaymentSession, GrowNotConfiguredError } from "@/lib/grow/client";
 import type { Order, OrderItem } from "@/lib/types";
 
@@ -21,8 +22,10 @@ export async function placeOrder(input: PlaceOrderInput): Promise<PlaceOrderResu
 
   const totalIls = input.items.reduce((sum, i) => sum + i.priceIls * i.quantity, 0);
   const now = new Date().toISOString();
+  const session = await getSessionUser();
 
   const order: Omit<Order, "id"> = {
+    ...(session ? { userId: session.uid } : {}),
     items: input.items,
     totalIls,
     status: "pending",

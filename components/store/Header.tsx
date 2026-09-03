@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Category } from "@/lib/types";
 import { CartButton } from "./CartButton";
+import { AccountButton } from "./AccountButton";
 
 export function Header({ categories }: { categories: Category[] }) {
   const topCategories = categories.slice(0, 7);
@@ -20,7 +21,10 @@ export function Header({ categories }: { categories: Category[] }) {
           03-5106888
         </a>
 
-        <CartButton />
+        <div className="flex items-center gap-2">
+          <AccountButton />
+          <CartButton />
+        </div>
       </div>
 
       {topCategories.length > 0 && (

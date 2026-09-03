@@ -44,6 +44,7 @@ export type OrderItem = {
 
 export type Order = {
   id: string;
+  userId?: string;
   items: OrderItem[];
   totalIls: number;
   status: OrderStatus;

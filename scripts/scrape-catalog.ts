@@ -81,7 +81,7 @@ function parseCategoryListing($: cheerio.CheerioAPI): ScrapedProduct[] {
     const description = $el.find("meta[itemprop=description]").first().attr("content") ?? "";
     const thumbUrl = $el.find("img").first().attr("src") ?? "";
 
-    if (!name || !href) return;
+    if (!name || !href || name === "ללא שם") return;
 
     products.push({
       sourceId: match[1]!,
@@ -108,20 +108,25 @@ async function fetchFullResImage(sourceUrl: string, fallback: string): Promise<s
 }
 
 async function uploadImage(imageUrl: string, storagePath: string, dryRun: boolean): Promise<string | null> {
-  if (!imageUrl) return null;
+  if (!imageUrl || !/^https?:\/\//.test(imageUrl)) return null;
   if (dryRun) return imageUrl;
 
-  const res = await fetch(imageUrl);
-  if (!res.ok) return null;
-  const buffer = Buffer.from(await res.arrayBuffer());
-  const contentType = res.headers.get("content-type") ?? "image/jpeg";
+  try {
+    const res = await fetch(imageUrl);
+    if (!res.ok) return null;
+    const buffer = Buffer.from(await res.arrayBuffer());
+    const contentType = res.headers.get("content-type") ?? "image/jpeg";
 
-  const bucket = adminStorage.bucket();
-  const file = bucket.file(storagePath);
-  await file.save(buffer, { metadata: { contentType } });
+    const bucket = adminStorage.bucket();
+    const file = bucket.file(storagePath);
+    await file.save(buffer, { metadata: { contentType } });
 
-  const bucketName = bucket.name;
-  return `https://firebasestorage.googleapis.com/v0/b/${bucketName}/o/${encodeURIComponent(storagePath)}?alt=media`;
+    const bucketName = bucket.name;
+    return `https://firebasestorage.googleapis.com/v0/b/${bucketName}/o/${encodeURIComponent(storagePath)}?alt=media`;
+  } catch (err) {
+    console.warn(`  ! image upload failed: ${(err as Error).message}`);
+    return null;
+  }
 }
 
 async function run() {
@@ -151,32 +156,36 @@ async function run() {
     console.log(`  found ${products.length} products`);
 
     for (const p of products) {
-      const productSlug = `${slugify(p.name)}-${p.sourceId}`;
-      const fullResUrl = await fetchFullResImage(p.sourceUrl, p.thumbUrl);
-      await sleep(REQUEST_DELAY_MS);
+      try {
+        const productSlug = `${slugify(p.name)}-${p.sourceId}`;
+        const fullResUrl = await fetchFullResImage(p.sourceUrl, p.thumbUrl);
+        await sleep(REQUEST_DELAY_MS);
 
-      const storagePath = `products/${category.slug}/${p.sourceId}.jpg`;
-      const imageUrl = await uploadImage(fullResUrl, storagePath, dryRun);
+        const storagePath = `products/${category.slug}/${p.sourceId}.jpg`;
+        const imageUrl = await uploadImage(fullResUrl, storagePath, dryRun);
 
-      console.log(`  - ${p.name} (${p.priceIls}₪)${imageUrl ? "" : " [no image]"}`);
+        console.log(`  - ${p.name} (${p.priceIls}₪)${imageUrl ? "" : " [no image]"}`);
 
-      if (!dryRun) {
-        const now = new Date().toISOString();
-        await adminDb.collection("products").doc(productSlug).set(
-          {
-            slug: productSlug,
-            name: p.name,
-            description: p.description,
-            categoryId: category.slug,
-            priceIls: p.priceIls,
-            images: imageUrl ? [imageUrl] : [],
-            published: true,
-            sourceUrl: p.sourceUrl,
-            createdAt: now,
-            updatedAt: now,
-          },
-          { merge: true },
-        );
+        if (!dryRun) {
+          const now = new Date().toISOString();
+          await adminDb.collection("products").doc(productSlug).set(
+            {
+              slug: productSlug,
+              name: p.name,
+              description: p.description,
+              categoryId: category.slug,
+              priceIls: p.priceIls,
+              images: imageUrl ? [imageUrl] : [],
+              published: true,
+              sourceUrl: p.sourceUrl,
+              createdAt: now,
+              updatedAt: now,
+            },
+            { merge: true },
+          );
+        }
+      } catch (err) {
+        console.warn(`  ! skipped "${p.name}" after error: ${(err as Error).message}`);
       }
 
       await sleep(REQUEST_DELAY_MS);
