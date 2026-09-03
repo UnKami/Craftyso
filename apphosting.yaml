@@ -1,0 +1,42 @@
+# Firebase App Hosting build/runtime config.
+# NEXT_PUBLIC_* values here are the public Firebase web config — not
+# secrets. They're protected by firestore.rules/storage.rules, not by
+# being hidden. Server-side admin credentials need no entry here: App
+# Hosting's backend runs with its own service account via Application
+# Default Credentials (see lib/firebase/admin.ts).
+env:
+  - variable: NEXT_PUBLIC_FIREBASE_API_KEY
+    value: AIzaSyCgCbI4-nZY_QCEnaApGFbSzC4MUVHXpLI
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+    value: craftyso.firebaseapp.com
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_FIREBASE_PROJECT_ID
+    value: craftyso
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
+    value: craftyso.firebasestorage.app
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+    value: "76911589257"
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_FIREBASE_APP_ID
+    value: "1:76911589257:web:28eed088cab37d74601358"
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
+    value: G-HTC6D6E1H6
+    availability:
+      - BUILD
+      - RUNTIME
