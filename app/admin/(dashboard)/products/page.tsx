@@ -2,7 +2,7 @@ import { listAllProducts } from "@/lib/firebase/admin-queries";
 import { getCategories } from "@/lib/firebase/queries";
 import { AddProductForm } from "@/components/admin/AddProductForm";
 import { PublishToggle } from "@/components/admin/PublishToggle";
-import { formatIls } from "@/lib/format";
+import { ProductPricingRow } from "@/components/admin/ProductPricingRow";
 
 export default async function ProductsPage() {
   const [products, categories] = await Promise.all([listAllProducts(), getCategories()]);
@@ -11,7 +11,7 @@ export default async function ProductsPage() {
   return (
     <div>
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-ink">מוצרים</h1>
+        <h1 className="text-2xl font-bold text-ink">מוצרים ומחירים</h1>
         <AddProductForm categories={categories} />
       </div>
 
@@ -26,16 +26,18 @@ export default async function ProductsPage() {
               <tr>
                 <th className="p-3 font-medium">שם</th>
                 <th className="p-3 font-medium">קטגוריה</th>
-                <th className="p-3 font-medium">מחיר</th>
+                <th className="p-3 font-medium">מחיר יחידה ומחיר לכמות</th>
                 <th className="p-3 font-medium">סטטוס</th>
               </tr>
             </thead>
             <tbody>
               {products.map((p) => (
                 <tr key={p.id} className="border-b border-border last:border-0">
-                  <td className="p-3">{p.name}</td>
+                  <td className="p-3 font-medium text-ink">{p.name}</td>
                   <td className="p-3">{categoryName.get(p.categoryId) ?? "—"}</td>
-                  <td className="p-3">{formatIls(p.priceIls)}</td>
+                  <td className="p-3">
+                    <ProductPricingRow product={p} />
+                  </td>
                   <td className="p-3">
                     <PublishToggle productId={p.id} published={p.published} />
                   </td>

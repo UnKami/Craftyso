@@ -21,6 +21,8 @@ export async function createProduct(input: {
   slug: string;
   categoryId: string;
   priceIls: number;
+  wholesalePriceIls?: number;
+  wholesaleMinQty?: number;
   description: string;
   imageUrl: string;
 }) {
@@ -33,6 +35,8 @@ export async function createProduct(input: {
     slug: input.slug,
     categoryId: input.categoryId,
     priceIls: input.priceIls,
+    wholesalePriceIls: input.wholesalePriceIls ?? null,
+    wholesaleMinQty: input.wholesaleMinQty ?? 10,
     description: input.description,
     images: input.imageUrl ? [input.imageUrl] : [],
     published: true,
@@ -41,4 +45,25 @@ export async function createProduct(input: {
   });
 
   revalidatePath("/admin/products");
+  revalidatePath("/");
+}
+
+export async function updateProductPricing(input: {
+  productId: string;
+  priceIls: number;
+  wholesalePriceIls?: number | null;
+  wholesaleMinQty?: number;
+}) {
+  const user = await getAdminUser();
+  if (!user) throw new Error("Unauthorized");
+
+  await adminDb.collection("products").doc(input.productId).update({
+    priceIls: input.priceIls,
+    wholesalePriceIls: input.wholesalePriceIls ?? null,
+    wholesaleMinQty: input.wholesaleMinQty ?? 10,
+    updatedAt: new Date().toISOString(),
+  });
+
+  revalidatePath("/admin/products");
+  revalidatePath("/");
 }

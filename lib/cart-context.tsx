@@ -9,13 +9,21 @@ export type CartLine = {
   priceIls: number;
   image?: string;
   quantity: number;
+  customArtworkUrl?: string;
+  customNotes?: string;
+  customSpecs?: {
+    widthCm?: number;
+    heightCm?: number;
+    baseColor?: string;
+    technique?: string;
+  };
 };
 
 type CartContextValue = {
   lines: CartLine[];
   addItem: (line: Omit<CartLine, "quantity">, quantity?: number) => void;
-  removeItem: (productId: string) => void;
-  setQuantity: (productId: string, quantity: number) => void;
+  removeItem: (productId: string, customArtworkUrl?: string) => void;
+  setQuantity: (productId: string, quantity: number, customArtworkUrl?: string) => void;
   clear: () => void;
   totalIls: number;
   totalItems: number;
@@ -48,27 +56,32 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, [lines, hydrated]);
 
   const value = useMemo<CartContextValue>(() => {
+    const isSameItem = (a: { productId: string; customArtworkUrl?: string }, b: { productId: string; customArtworkUrl?: string }) =>
+      a.productId === b.productId && (a.customArtworkUrl ?? "") === (b.customArtworkUrl ?? "");
+
     const addItem: CartContextValue["addItem"] = (line, quantity = 1) => {
       setLines((prev) => {
-        const existing = prev.find((l) => l.productId === line.productId);
-        if (existing) {
-          return prev.map((l) =>
-            l.productId === line.productId ? { ...l, quantity: l.quantity + quantity } : l,
+        const existingIndex = prev.findIndex((l) => isSameItem(l, line));
+        if (existingIndex !== -1) {
+          return prev.map((l, idx) =>
+            idx === existingIndex ? { ...l, quantity: l.quantity + quantity } : l,
           );
         }
         return [...prev, { ...line, quantity }];
       });
     };
 
-    const removeItem: CartContextValue["removeItem"] = (productId) => {
-      setLines((prev) => prev.filter((l) => l.productId !== productId));
+    const removeItem: CartContextValue["removeItem"] = (productId, customArtworkUrl) => {
+      setLines((prev) => prev.filter((l) => !isSameItem(l, { productId, customArtworkUrl })));
     };
 
-    const setQuantity: CartContextValue["setQuantity"] = (productId, quantity) => {
+    const setQuantity: CartContextValue["setQuantity"] = (productId, quantity, customArtworkUrl) => {
       setLines((prev) =>
         quantity <= 0
-          ? prev.filter((l) => l.productId !== productId)
-          : prev.map((l) => (l.productId === productId ? { ...l, quantity } : l)),
+          ? prev.filter((l) => !isSameItem(l, { productId, customArtworkUrl }))
+          : prev.map((l) =>
+              isSameItem(l, { productId, customArtworkUrl }) ? { ...l, quantity } : l,
+            ),
       );
     };
 

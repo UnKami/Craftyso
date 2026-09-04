@@ -23,6 +23,8 @@ export type Product = {
   description?: string;
   categoryId: string;
   priceIls: number;
+  wholesalePriceIls?: number;
+  wholesaleMinQty?: number;
   images: string[];
   variants?: ProductVariant[];
   stock?: number;
@@ -34,12 +36,27 @@ export type Product = {
 
 export type OrderStatus = "pending" | "paid" | "failed" | "fulfilled" | "cancelled";
 
+export type ProductionStatus =
+  | "pending_production"
+  | "in_production"
+  | "quality_check"
+  | "ready_to_ship"
+  | "shipped";
+
 export type OrderItem = {
   productId: string;
   variantId?: string;
   name: string;
   priceIls: number;
   quantity: number;
+  customArtworkUrl?: string;
+  customNotes?: string;
+  customSpecs?: {
+    widthCm?: number;
+    heightCm?: number;
+    baseColor?: string;
+    technique?: string;
+  };
 };
 
 export type Order = {
@@ -48,11 +65,43 @@ export type Order = {
   items: OrderItem[];
   totalIls: number;
   status: OrderStatus;
+  productionStatus?: ProductionStatus;
+  factoryNotes?: string;
+  trackingNumber?: string;
   customerName: string;
   customerEmail: string;
   customerPhone: string;
   shippingAddress?: string;
   growTransactionId?: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type InventoryItem = {
+  id: string;
+  name: string;
+  sku: string;
+  category: string;
+  stockQty: number;
+  minAlertQty: number;
+  unit: string;
+  costPriceIls: number;
+  supplierName?: string;
+  supplierPhone?: string;
+  lastRestockedAt?: string;
+  updatedAt: string;
+};
+
+export type RestockOrder = {
+  id: string;
+  inventoryItemId: string;
+  itemName: string;
+  quantity: number;
+  supplierName: string;
+  status: "ordered" | "received" | "cancelled";
+  estimatedArrival?: string;
+  costIls: number;
+  notes?: string;
   createdAt: string;
   updatedAt: string;
 };

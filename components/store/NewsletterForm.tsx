@@ -28,7 +28,7 @@ export function NewsletterForm() {
   }
 
   if (status === "done") {
-    return <p className="text-sm text-brand-light">תודה! נרשמתם בהצלחה למועדון הלקוחות.</p>;
+    return <p className="text-sm font-medium text-[#eed3a2]">תודה! נרשמתם בהצלחה למועדון הלקוחות.</p>;
   }
 
   return (
@@ -39,17 +39,17 @@ export function NewsletterForm() {
         placeholder="כתובת אימייל"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
-        className="min-w-0 flex-1 rounded-full border border-white/30 bg-white/10 px-4 py-2 text-sm text-white placeholder:text-white/70 outline-none focus:border-white"
+        className="min-w-0 flex-1 rounded-full border border-[#c59b5f]/40 bg-[#140e0b] px-4 py-2.5 text-sm text-[#f3ede2] placeholder-[#7d6f60] outline-none transition focus:border-[#dfb37c] focus:ring-1 focus:ring-[#dfb37c]"
       />
       <button
         type="submit"
         disabled={status === "loading"}
-        className="shrink-0 rounded-full bg-white px-4 py-2 text-sm font-medium text-brand-dark disabled:opacity-60"
+        className="shrink-0 rounded-full bg-gold-gradient-btn px-5 py-2.5 text-xs font-semibold text-white transition disabled:opacity-60"
       >
         {status === "loading" ? "שולח..." : "הצטרפו"}
       </button>
       {status === "error" && (
-        <span className="text-xs text-white">שגיאה, נסו שוב</span>
+        <span className="text-xs text-[#e87a7a]">שגיאה, נסו שוב</span>
       )}
     </form>
   );

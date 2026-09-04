@@ -24,11 +24,14 @@ export async function placeOrder(input: PlaceOrderInput): Promise<PlaceOrderResu
   const now = new Date().toISOString();
   const session = await getSessionUser();
 
+  const hasCustomItems = input.items.some((i) => Boolean(i.customArtworkUrl));
+
   const order: Omit<Order, "id"> = {
     ...(session ? { userId: session.uid } : {}),
     items: input.items,
     totalIls,
     status: "pending",
+    productionStatus: hasCustomItems ? "pending_production" : undefined,
     customerName: input.customerName,
     customerEmail: input.customerEmail,
     customerPhone: input.customerPhone,

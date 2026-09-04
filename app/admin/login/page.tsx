@@ -43,7 +43,7 @@ export default function AdminLoginPage() {
         className="w-full max-w-sm rounded-2xl border border-border bg-surface p-8 shadow-sm"
       >
         <h1 className="mb-1 text-xl font-bold text-ink">כניסת מנהלים</h1>
-        <p className="mb-6 text-sm text-ink-muted">לוח ניהול קראפטיסו</p>
+        <p className="mb-6 text-sm text-ink-muted">לוח ניהול SO</p>
 
         <label className="mb-3 flex flex-col gap-1 text-sm text-ink-muted">
           אימייל

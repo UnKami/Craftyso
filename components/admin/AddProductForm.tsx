@@ -18,6 +18,8 @@ export function AddProductForm({ categories }: { categories: Category[] }) {
     name: "",
     categoryId: categories[0]?.id ?? "",
     priceIls: "",
+    wholesalePriceIls: "",
+    wholesaleMinQty: "10",
     description: "",
     imageUrl: "",
   });
@@ -30,10 +32,20 @@ export function AddProductForm({ categories }: { categories: Category[] }) {
         slug: slugify(form.name) || crypto.randomUUID(),
         categoryId: form.categoryId,
         priceIls: Number(form.priceIls) || 0,
+        wholesalePriceIls: form.wholesalePriceIls ? Number(form.wholesalePriceIls) : undefined,
+        wholesaleMinQty: form.wholesaleMinQty ? Number(form.wholesaleMinQty) : 10,
         description: form.description,
         imageUrl: form.imageUrl,
       });
-      setForm({ name: "", categoryId: categories[0]?.id ?? "", priceIls: "", description: "", imageUrl: "" });
+      setForm({
+        name: "",
+        categoryId: categories[0]?.id ?? "",
+        priceIls: "",
+        wholesalePriceIls: "",
+        wholesaleMinQty: "10",
+        description: "",
+        imageUrl: "",
+      });
       setOpen(false);
     });
   }
@@ -64,7 +76,9 @@ export function AddProductForm({ categories }: { categories: Category[] }) {
           ))}
         </select>
       </label>
-      <MiniField label="מחיר (₪)" value={form.priceIls} onChange={(v) => setForm({ ...form, priceIls: v })} />
+      <MiniField label="מחיר ליחידה (₪)" value={form.priceIls} onChange={(v) => setForm({ ...form, priceIls: v })} />
+      <MiniField label="מחיר לכמות / סיטונאי (₪)" value={form.wholesalePriceIls} onChange={(v) => setForm({ ...form, wholesalePriceIls: v })} />
+      <MiniField label="כמות מינימלית למחיר סיטונאי" value={form.wholesaleMinQty} onChange={(v) => setForm({ ...form, wholesaleMinQty: v })} />
       <MiniField label="קישור לתמונה" value={form.imageUrl} onChange={(v) => setForm({ ...form, imageUrl: v })} />
       <label className="col-span-full flex flex-col gap-1 text-xs text-ink-muted">
         תיאור

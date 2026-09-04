@@ -6,7 +6,7 @@ export function CategoryCard({ category }: { category: Category }) {
   return (
     <Link
       href={`/category/${category.slug}`}
-      className="group relative flex aspect-[4/3] items-end overflow-hidden rounded-2xl bg-surface-muted"
+      className="atelier-card group relative flex aspect-[4/3] items-end overflow-hidden rounded-xl"
     >
       {category.imageUrl ? (
         <Image
@@ -14,13 +14,15 @@ export function CategoryCard({ category }: { category: Category }) {
           alt={category.name}
           fill
           sizes="(min-width: 1024px) 25vw, 50vw"
-          className="object-cover transition duration-300 group-hover:scale-105"
+          className="object-cover transition duration-500 group-hover:scale-105 opacity-80 group-hover:opacity-100"
         />
       ) : null}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-black/0" />
-      <span className="relative z-10 p-4 text-base font-semibold text-white">
-        {category.name}
-      </span>
+      <div className="absolute inset-0 bg-gradient-to-t from-[#0e0906] via-[#0e0906]/40 to-transparent" />
+      <div className="relative z-10 p-4 w-full">
+        <span className="block font-serif-hebrew text-base font-semibold text-[#f3ede2] group-hover:text-[#faebd7] transition drop-shadow-sm">
+          {category.name}
+        </span>
+      </div>
     </Link>
   );
 }
