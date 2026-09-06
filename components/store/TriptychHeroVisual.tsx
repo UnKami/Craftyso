@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Image from "next/image";
 
 const HERO_SCENES = [
   {
@@ -31,10 +30,30 @@ const HERO_SCENES = [
 const TOTAL_WIDTH = 562;
 const TOTAL_HEIGHT = 580;
 
+// All 4 clips share this native size (verified at export time).
+const NATIVE_W = 1080;
+
+// Native-pixel crop rects for the left/right panels, derived from the same
+// object-cover math the original static triptych used to slice one 562x580
+// virtual canvas into 3 windows (155/220/155 wide, gap 16, panel heights
+// 460/580/460). Since left and right are drawn straight from the video via
+// canvas (not CSS object-cover), the crop has to be computed in source
+// pixels up front instead of left to the browser.
+const SIDE_CROP = { sx: 0, sy: 233, sw: 298, sh: 884 }; // mirrored for the right panel
+const SIDE_PANEL_W = 155;
+const SIDE_PANEL_H = 460;
+
 export function TriptychHeroVisual() {
   const [index, setIndex] = useState(0);
+  const indexRef = useRef(0);
   const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
+  const leftCanvasRef = useRef<HTMLCanvasElement>(null);
+  const rightCanvasRef = useRef<HTMLCanvasElement>(null);
   const current = HERO_SCENES[index];
+
+  useEffect(() => {
+    indexRef.current = index;
+  }, [index]);
 
   // All 4 clips stay mounted (preloaded) throughout — only the active one
   // plays. Advancing swaps which is visible/playing instead of tearing
@@ -51,6 +70,66 @@ export function TriptychHeroVisual() {
     });
   }, [index]);
 
+  // Mirror the currently-playing video's frames into the two side canvases,
+  // cropped to their slice of the same virtual frame. This keeps all three
+  // panels showing live motion from a single decode — the side panels are
+  // pixel copies of the exact same frame the center is showing, so there is
+  // no independent playback clock left to drift out of sync.
+  useEffect(() => {
+    const leftCanvas = leftCanvasRef.current;
+    const rightCanvas = rightCanvasRef.current;
+    const leftCtx = leftCanvas?.getContext("2d");
+    const rightCtx = rightCanvas?.getContext("2d");
+    if (!leftCanvas || !rightCanvas || !leftCtx || !rightCtx) return;
+
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    leftCanvas.width = SIDE_PANEL_W * dpr;
+    leftCanvas.height = SIDE_PANEL_H * dpr;
+    rightCanvas.width = SIDE_PANEL_W * dpr;
+    rightCanvas.height = SIDE_PANEL_H * dpr;
+
+    let cancelled = false;
+
+    function draw() {
+      if (cancelled) return;
+      const video = videoRefs.current[indexRef.current];
+      if (video && video.readyState >= 2 && leftCanvas && rightCanvas) {
+        leftCtx!.drawImage(
+          video,
+          SIDE_CROP.sx,
+          SIDE_CROP.sy,
+          SIDE_CROP.sw,
+          SIDE_CROP.sh,
+          0,
+          0,
+          leftCanvas.width,
+          leftCanvas.height
+        );
+        rightCtx!.drawImage(
+          video,
+          NATIVE_W - SIDE_CROP.sx - SIDE_CROP.sw,
+          SIDE_CROP.sy,
+          SIDE_CROP.sw,
+          SIDE_CROP.sh,
+          0,
+          0,
+          rightCanvas.width,
+          rightCanvas.height
+        );
+      }
+      if (video && "requestVideoFrameCallback" in video) {
+        (video as HTMLVideoElement & { requestVideoFrameCallback: (cb: () => void) => number }).requestVideoFrameCallback(draw);
+      } else {
+        requestAnimationFrame(draw);
+      }
+    }
+    draw();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   function handleEnded() {
     setIndex((i) => (i + 1) % HERO_SCENES.length);
   }
@@ -63,27 +142,14 @@ export function TriptychHeroVisual() {
       {/* Triptych Wrapper with responsive scale */}
       <div className="relative flex items-center justify-center gap-4 transform scale-[0.70] xs:scale-[0.80] sm:scale-[0.90] md:scale-95 lg:scale-100 xl:scale-105 transition-transform duration-500">
         {/* ============================================================ */}
-        {/* PANEL 1: Left Frame — crisp still, same crop as the video     */}
+        {/* PANEL 1: Left Frame — live mirror of the center video's crop  */}
         {/* ============================================================ */}
         <div className="animate-triptych-left relative h-[460px] w-[155px] shrink-0 overflow-hidden rounded-sm border border-[#c59b5f]/75 bg-[#0e0906] shadow-[0_12px_40px_rgba(0,0,0,0.9)] transition-all duration-500 hover:border-[#eed3a2]">
-          <div
-            className="animate-portrait-breathe absolute top-[-60px] left-0 pointer-events-none origin-center"
-            style={{ width: `${TOTAL_WIDTH}px`, height: `${TOTAL_HEIGHT}px` }}
-          >
-            {HERO_SCENES.map((s, i) => (
-              <Image
-                key={s.poster}
-                src={s.poster}
-                alt=""
-                fill
-                sizes="562px"
-                priority={i === 0}
-                className={`object-cover object-center transition-opacity duration-700 ${
-                  i === index ? "opacity-100" : "opacity-0"
-                }`}
-              />
-            ))}
-          </div>
+          <canvas
+            ref={leftCanvasRef}
+            aria-hidden="true"
+            className="animate-portrait-breathe absolute inset-0 h-full w-full"
+          />
 
           {/* Animated Gold Sheen Sweep across left frame */}
           <div className="animate-gold-sheen pointer-events-none absolute inset-0 z-20 w-1/2 bg-gradient-to-r from-transparent via-[#fff5d0]/30 to-transparent" />
@@ -154,27 +220,14 @@ export function TriptychHeroVisual() {
         </div>
 
         {/* ============================================================ */}
-        {/* PANEL 3: Right Frame — crisp still, same crop as the video    */}
+        {/* PANEL 3: Right Frame — live mirror of the center video's crop */}
         {/* ============================================================ */}
         <div className="animate-triptych-right relative h-[460px] w-[155px] shrink-0 overflow-hidden rounded-sm border border-[#c59b5f]/75 bg-[#0e0906] shadow-[0_12px_40px_rgba(0,0,0,0.9)] transition-all duration-500 hover:border-[#eed3a2]">
-          <div
-            className="animate-portrait-breathe absolute top-[-60px] left-[-407px] pointer-events-none origin-center"
-            style={{ width: `${TOTAL_WIDTH}px`, height: `${TOTAL_HEIGHT}px` }}
-          >
-            {HERO_SCENES.map((s, i) => (
-              <Image
-                key={s.poster}
-                src={s.poster}
-                alt=""
-                fill
-                sizes="562px"
-                priority={i === 0}
-                className={`object-cover object-center transition-opacity duration-700 ${
-                  i === index ? "opacity-100" : "opacity-0"
-                }`}
-              />
-            ))}
-          </div>
+          <canvas
+            ref={rightCanvasRef}
+            aria-hidden="true"
+            className="animate-portrait-breathe absolute inset-0 h-full w-full"
+          />
 
           {/* Animated Gold Sheen Sweep across right frame */}
           <div
