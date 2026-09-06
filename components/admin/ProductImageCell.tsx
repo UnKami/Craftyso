@@ -23,7 +23,7 @@ export function ProductImageCell({ product }: { product: Product }) {
       <div className="flex items-center gap-2">
         {currentImage ? (
           <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg border border-border bg-surface-muted">
-            <Image src={currentImage} alt={product.name} fill className="object-cover" unoptimized />
+            <Image src={currentImage} alt={product.name} fill className="object-cover" unoptimized loading="eager" />
           </div>
         ) : (
           <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border border-dashed border-border text-[10px] text-ink-muted">
