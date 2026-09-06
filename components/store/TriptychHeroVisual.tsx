@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 
 const HERO_SCENES = [
@@ -33,7 +33,23 @@ const TOTAL_HEIGHT = 580;
 
 export function TriptychHeroVisual() {
   const [index, setIndex] = useState(0);
+  const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
   const current = HERO_SCENES[index];
+
+  // All 4 clips stay mounted (preloaded) throughout — only the active one
+  // plays. Advancing swaps which is visible/playing instead of tearing
+  // down and re-fetching a video element every few seconds.
+  useEffect(() => {
+    videoRefs.current.forEach((v, i) => {
+      if (!v) return;
+      if (i === index) {
+        v.currentTime = 0;
+        v.play().catch(() => {});
+      } else {
+        v.pause();
+      }
+    });
+  }, [index]);
 
   function handleEnded() {
     setIndex((i) => (i + 1) % HERO_SCENES.length);
@@ -54,13 +70,19 @@ export function TriptychHeroVisual() {
             className="animate-portrait-breathe absolute top-[-60px] left-0 pointer-events-none origin-center"
             style={{ width: `${TOTAL_WIDTH}px`, height: `${TOTAL_HEIGHT}px` }}
           >
-            <Image
-              src={current.poster}
-              alt=""
-              fill
-              sizes="562px"
-              className="object-cover object-center"
-            />
+            {HERO_SCENES.map((s, i) => (
+              <Image
+                key={s.poster}
+                src={s.poster}
+                alt=""
+                fill
+                sizes="562px"
+                priority={i === 0}
+                className={`object-cover object-center transition-opacity duration-700 ${
+                  i === index ? "opacity-100" : "opacity-0"
+                }`}
+              />
+            ))}
           </div>
 
           {/* Animated Gold Sheen Sweep across left frame */}
@@ -72,25 +94,33 @@ export function TriptychHeroVisual() {
         </div>
 
         {/* ============================================================ */}
-        {/* PANEL 2: Center Frame — the single live video, driving the    */}
-        {/*          sequence via onEnded                                 */}
+        {/* PANEL 2: Center Frame — 4 preloaded videos, crossfading       */}
+        {/*          between them instead of remounting                  */}
         {/* ============================================================ */}
         <div className="animate-triptych-center relative z-10 h-[580px] w-[220px] shrink-0 overflow-hidden rounded-sm border-2 border-[#eed3a2] bg-[#0e0906] shadow-[0_25px_65px_rgba(0,0,0,0.98),_0_0_35px_rgba(201,154,101,0.35)] transition-all duration-500 hover:border-[#fff0c8] hover:shadow-[0_30px_80px_rgba(0,0,0,1),_0_0_45px_rgba(238,211,162,0.5)]">
           <div
             className="absolute top-0 left-[-171px] pointer-events-none origin-center"
             style={{ width: `${TOTAL_WIDTH}px`, height: `${TOTAL_HEIGHT}px` }}
           >
-            <video
-              key={current.video}
-              src={current.video}
-              poster={current.poster}
-              autoPlay
-              muted
-              playsInline
-              onEnded={handleEnded}
-              aria-label={current.alt}
-              className="h-full w-full object-cover object-center"
-            />
+            {HERO_SCENES.map((s, i) => (
+              <video
+                key={s.video}
+                ref={(el) => {
+                  videoRefs.current[i] = el;
+                }}
+                src={s.video}
+                poster={s.poster}
+                preload="auto"
+                muted
+                playsInline
+                onEnded={i === index ? handleEnded : undefined}
+                aria-label={i === index ? current.alt : undefined}
+                aria-hidden={i === index ? undefined : "true"}
+                className={`absolute inset-0 h-full w-full object-cover object-center transition-opacity duration-700 ${
+                  i === index ? "opacity-100" : "opacity-0"
+                }`}
+              />
+            ))}
           </div>
 
           {/* Animated Golden Light Sweep gliding across center frame */}
@@ -131,13 +161,19 @@ export function TriptychHeroVisual() {
             className="animate-portrait-breathe absolute top-[-60px] left-[-407px] pointer-events-none origin-center"
             style={{ width: `${TOTAL_WIDTH}px`, height: `${TOTAL_HEIGHT}px` }}
           >
-            <Image
-              src={current.poster}
-              alt=""
-              fill
-              sizes="562px"
-              className="object-cover object-center"
-            />
+            {HERO_SCENES.map((s, i) => (
+              <Image
+                key={s.poster}
+                src={s.poster}
+                alt=""
+                fill
+                sizes="562px"
+                priority={i === 0}
+                className={`object-cover object-center transition-opacity duration-700 ${
+                  i === index ? "opacity-100" : "opacity-0"
+                }`}
+              />
+            ))}
           </div>
 
           {/* Animated Gold Sheen Sweep across right frame */}
