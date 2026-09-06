@@ -199,3 +199,23 @@ body {
   animation: slow-portrait-breathe 14s ease-in-out infinite;
 }
 
+/* Ambient logo watermark, revealed as sections scroll into view */
+@keyframes watermark-float {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-10px) rotate(0.6deg);
+  }
+}
+
+.animate-watermark-float {
+  animation: watermark-float 11s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-watermark-float {
+    animation: none;
+  }
+}
+
