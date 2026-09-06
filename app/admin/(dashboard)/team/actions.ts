@@ -39,6 +39,20 @@ export async function inviteAdmin(email: string, role: AdminRole): Promise<Invit
   }
 }
 
+export type ResetPasswordResult = { ok: true; setPasswordLink: string } | { ok: false; error: string };
+
+export async function resetAdminPassword(email: string): Promise<ResetPasswordResult> {
+  await requireOwner();
+
+  try {
+    const setPasswordLink = await adminAuth.generatePasswordResetLink(email);
+    return { ok: true, setPasswordLink };
+  } catch (err) {
+    console.error("[team] resetAdminPassword failed:", err);
+    return { ok: false, error: "אירעה שגיאה ביצירת קישור לאיפוס סיסמה." };
+  }
+}
+
 export async function removeAdmin(uid: string) {
   const owner = await requireOwner();
   if (uid === owner.uid) throw new Error("Cannot remove yourself");

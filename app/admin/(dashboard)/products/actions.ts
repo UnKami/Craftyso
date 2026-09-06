@@ -48,6 +48,22 @@ export async function createProduct(input: {
   revalidatePath("/");
 }
 
+export async function updateProductImage(input: { productId: string; imageUrl: string }) {
+  const user = await getAdminUser();
+  if (!user) throw new Error("Unauthorized");
+
+  await adminDb
+    .collection("products")
+    .doc(input.productId)
+    .update({
+      images: input.imageUrl ? [input.imageUrl] : [],
+      updatedAt: new Date().toISOString(),
+    });
+
+  revalidatePath("/admin/products");
+  revalidatePath("/");
+}
+
 export async function updateProductPricing(input: {
   productId: string;
   priceIls: number;

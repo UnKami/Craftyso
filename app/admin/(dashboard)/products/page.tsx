@@ -3,6 +3,7 @@ import { getCategories } from "@/lib/firebase/queries";
 import { AddProductForm } from "@/components/admin/AddProductForm";
 import { PublishToggle } from "@/components/admin/PublishToggle";
 import { ProductPricingRow } from "@/components/admin/ProductPricingRow";
+import { ProductImageCell } from "@/components/admin/ProductImageCell";
 
 export default async function ProductsPage() {
   const [products, categories] = await Promise.all([listAllProducts(), getCategories()]);
@@ -24,6 +25,7 @@ export default async function ProductsPage() {
           <table className="w-full text-sm">
             <thead className="border-b border-border text-right text-ink-muted">
               <tr>
+                <th className="p-3 font-medium">תמונה</th>
                 <th className="p-3 font-medium">שם</th>
                 <th className="p-3 font-medium">קטגוריה</th>
                 <th className="p-3 font-medium">מחיר יחידה ומחיר לכמות</th>
@@ -33,6 +35,9 @@ export default async function ProductsPage() {
             <tbody>
               {products.map((p) => (
                 <tr key={p.id} className="border-b border-border last:border-0">
+                  <td className="p-3">
+                    <ProductImageCell product={p} />
+                  </td>
                   <td className="p-3 font-medium text-ink">{p.name}</td>
                   <td className="p-3">{categoryName.get(p.categoryId) ?? "—"}</td>
                   <td className="p-3">
