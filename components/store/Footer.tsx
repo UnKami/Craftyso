@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { NewsletterForm } from "./NewsletterForm";
 
@@ -6,11 +7,9 @@ export function Footer() {
     <footer className="mt-16 border-t border-[#2d2118] bg-[#080605] text-[#f3ede2]">
       <div className="mx-auto flex max-w-6xl flex-col gap-8 px-4 py-14 md:flex-row md:justify-between">
         <div className="max-w-sm space-y-3">
-          <div className="flex flex-col">
-            <span dir="ltr" className="font-serif-hebrew text-2xl font-bold tracking-widest text-gold-gradient">
-              SO
-            </span>
-            <span className="text-[10px] tracking-[0.2em] text-[#8a7a6a] uppercase">
+          <div className="flex flex-col items-start">
+            <Image src="/logo/so-logo.png" alt="SO" width={960} height={590} className="h-9 w-auto" />
+            <span className="mt-1 text-[10px] tracking-[0.2em] text-[#8a7a6a] uppercase">
               ATELIER & HABERDASHERY
             </span>
           </div>

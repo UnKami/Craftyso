@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 
@@ -77,7 +78,7 @@ export function Sidebar({ email }: { email: string }) {
             <path d="M4 6h16M4 12h16M4 18h16" strokeLinecap="round" />
           </svg>
         </button>
-        <p className="text-lg font-bold text-brand">SO</p>
+        <Image src="/logo/so-logo.png" alt="SO" width={960} height={590} className="h-6 w-auto" />
         <span className="w-9" aria-hidden="true" />
       </div>
 
@@ -88,8 +89,8 @@ export function Sidebar({ email }: { email: string }) {
           <aside className="absolute inset-y-0 right-0 flex w-72 max-w-[85vw] flex-col bg-surface p-4 shadow-xl">
             <div className="mb-6 flex items-center justify-between px-2">
               <div>
-                <p className="text-lg font-bold text-brand">SO</p>
-                <p className="text-xs text-ink-muted">לוח ניהול</p>
+                <Image src="/logo/so-logo.png" alt="SO" width={960} height={590} className="h-6 w-auto" />
+                <p className="mt-1 text-xs text-ink-muted">לוח ניהול</p>
               </div>
               <button
                 onClick={() => setOpen(false)}
@@ -110,8 +111,8 @@ export function Sidebar({ email }: { email: string }) {
       {/* Desktop sidebar */}
       <aside className="hidden w-60 shrink-0 flex-col border-l border-border bg-surface p-4 md:flex">
         <div className="mb-6 px-2">
-          <p className="text-lg font-bold text-brand">SO</p>
-          <p className="text-xs text-ink-muted">לוח ניהול</p>
+          <Image src="/logo/so-logo.png" alt="SO" width={960} height={590} className="h-7 w-auto" />
+          <p className="mt-1 text-xs text-ink-muted">לוח ניהול</p>
         </div>
         <NavLinks pathname={pathname} />
         <AccountFooter email={email} onLogout={handleLogout} />

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "@/lib/firebase/client";
@@ -42,8 +43,9 @@ export default function AdminLoginPage() {
         onSubmit={handleSubmit}
         className="w-full max-w-sm rounded-2xl border border-border bg-surface p-8 shadow-sm"
       >
+        <Image src="/logo/so-logo.png" alt="SO" width={960} height={590} className="mb-4 h-8 w-auto" />
         <h1 className="mb-1 text-xl font-bold text-ink">כניסת מנהלים</h1>
-        <p className="mb-6 text-sm text-ink-muted">לוח ניהול SO</p>
+        <p className="mb-6 text-sm text-ink-muted">לוח ניהול</p>
 
         <label className="mb-3 flex flex-col gap-1 text-sm text-ink-muted">
           אימייל

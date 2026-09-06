@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { Category } from "@/lib/types";
@@ -65,12 +66,14 @@ export function Header({ categories }: { categories: Category[] }) {
         {/* Center: Brand Logo */}
         <div className="flex flex-col items-center">
           <Link href="/" className="group flex flex-col items-center text-center">
-            <span
-              dir="ltr"
-              className="font-serif-hebrew text-2xl font-bold tracking-widest text-gold-gradient transition duration-300 group-hover:brightness-125 md:text-3xl"
-            >
-              SO
-            </span>
+            <Image
+              src="/logo/so-logo.png"
+              alt="SO"
+              width={960}
+              height={590}
+              priority
+              className="h-9 w-auto transition duration-300 group-hover:brightness-125 md:h-11"
+            />
             <span className="text-[10px] tracking-[0.25em] text-[#8a7a6a] uppercase transition group-hover:text-[#c59b5f]">
               ATELIER & COUTURE
             </span>
