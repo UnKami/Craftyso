@@ -31,7 +31,7 @@ export async function listOrders(): Promise<Order[]> {
 
 export async function listAllProducts(): Promise<Product[]> {
   return safe(async () => {
-    const snap = await adminDb.collection("products").orderBy("updatedAt", "desc").limit(500).get();
+    const snap = await adminDb.collection("products").orderBy("updatedAt", "desc").get();
     return snap.docs.map((d) => withId<Product>(d));
   }, []);
 }
