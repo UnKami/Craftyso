@@ -5,31 +5,16 @@ import Image from "next/image";
 
 type Corner = "top-right" | "top-left" | "bottom-right" | "bottom-left" | "center";
 
-const TRANSLATE: Record<Corner, string> = {
-  "top-right": "translate(22%, -22%)",
-  "top-left": "translate(-22%, -22%)",
-  "bottom-right": "translate(22%, 22%)",
-  "bottom-left": "translate(-22%, 22%)",
-  center: "translate(-50%, -50%)",
+// Fully inset offsets — the emblem never straddles the section edge or gets clipped.
+const POSITION_STYLE: Record<Corner, React.CSSProperties> = {
+  "top-right": { top: "6%", right: "4%" },
+  "top-left": { top: "6%", left: "4%" },
+  "bottom-right": { bottom: "6%", right: "4%" },
+  "bottom-left": { bottom: "6%", left: "4%" },
+  center: { top: "50%", left: "50%", transform: "translate(-50%, -50%)" },
 };
 
-const POSITION_CLASS: Record<Corner, string> = {
-  "top-right": "top-0 right-0",
-  "top-left": "top-0 left-0",
-  "bottom-right": "bottom-0 right-0",
-  "bottom-left": "bottom-0 left-0",
-  center: "top-1/2 left-1/2",
-};
-
-export function LogoWatermark({
-  corner = "center",
-  size = 420,
-  opacity = 0.14,
-}: {
-  corner?: Corner;
-  size?: number;
-  opacity?: number;
-}) {
+function useReveal() {
   const ref = useRef<HTMLDivElement>(null);
   const [revealed, setRevealed] = useState(false);
 
@@ -53,22 +38,70 @@ export function LogoWatermark({
     return () => observer.disconnect();
   }, []);
 
+  return { ref, revealed };
+}
+
+/**
+ * A low-opacity ambient logo emblem for behind a section's content.
+ * Always fully inset within its container — never crosses the edge.
+ */
+export function LogoWatermark({
+  corner = "center",
+  size = 240,
+  opacity = 0.07,
+}: {
+  corner?: Corner;
+  size?: number;
+  opacity?: number;
+}) {
+  const { ref, revealed } = useReveal();
+  const isCenter = corner === "center";
+
   return (
     <div
       ref={ref}
       aria-hidden="true"
-      className={`pointer-events-none absolute z-0 ${POSITION_CLASS[corner]} transition-[opacity,transform] duration-[1600ms] ease-out`}
+      className="pointer-events-none absolute z-0 transition-[opacity,transform] duration-[1600ms] ease-out"
       style={{
         width: size,
         height: size * (590 / 960),
         opacity: revealed ? opacity : 0,
-        transform: `${TRANSLATE[corner]} scale(${revealed ? 1 : 0.9})`,
-        filter: "drop-shadow(0 0 40px rgba(212,175,55,0.18))",
+        ...POSITION_STYLE[corner],
+        transform: isCenter
+          ? `translate(-50%, -50%) scale(${revealed ? 1 : 0.94})`
+          : `scale(${revealed ? 1 : 0.94})`,
       }}
     >
       <div className="animate-watermark-float relative h-full w-full">
         <Image src="/logo/so-logo.png" alt="" fill sizes={`${size}px`} className="object-contain" />
       </div>
+    </div>
+  );
+}
+
+/**
+ * A small, more visible logo mark that sits in normal document flow —
+ * meant for the top edge of a section, like a couture seal or divider,
+ * rather than an atmospheric background wash. Never clipped.
+ */
+export function LogoSeal({ opacity = 0.55, size = 64 }: { opacity?: number; size?: number }) {
+  const { ref, revealed } = useReveal();
+
+  return (
+    <div
+      ref={ref}
+      aria-hidden="true"
+      className="flex items-center justify-center gap-4 transition-[opacity,transform] duration-[1200ms] ease-out"
+      style={{
+        opacity: revealed ? opacity : 0,
+        transform: `translateY(${revealed ? 0 : 8}px)`,
+      }}
+    >
+      <span className="h-px w-12 bg-gradient-to-r from-transparent to-[#c59b5f]/60 sm:w-20" />
+      <div className="relative shrink-0" style={{ width: size, height: size * (590 / 960) }}>
+        <Image src="/logo/so-logo.png" alt="SO" fill sizes={`${size}px`} className="object-contain" />
+      </div>
+      <span className="h-px w-12 bg-gradient-to-l from-transparent to-[#c59b5f]/60 sm:w-20" />
     </div>
   );
 }

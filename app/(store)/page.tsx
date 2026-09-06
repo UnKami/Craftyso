@@ -37,7 +37,7 @@ import { RollingSpecialOffers } from "@/components/store/RollingSpecialOffers";
 import { CustomProductsSection } from "@/components/store/CustomProductsSection";
 import { TriptychHeroVisual } from "@/components/store/TriptychHeroVisual";
 import { HeroGoldenStreaks } from "@/components/store/HeroGoldenStreaks";
-import { LogoWatermark } from "@/components/store/LogoWatermark";
+import { LogoSeal, LogoWatermark } from "@/components/store/LogoWatermark";
 
 export default async function HomePage() {
   const [categories, products] = await Promise.all([
@@ -158,7 +158,7 @@ export default async function HomePage() {
 
       {/* 5. CATEGORIES SECTION (Placed after custom section) */}
       <section className="relative z-20 mx-auto w-full max-w-6xl overflow-hidden px-4 pt-14 pb-8">
-        <LogoWatermark corner="top-right" size={380} opacity={0.1} />
+        <LogoWatermark corner="top-right" size={210} opacity={0.07} />
 
         <div className="relative z-10 mb-8 flex items-end justify-between border-b border-[#2d2118] pb-4">
           <div>
@@ -269,10 +269,12 @@ export default async function HomePage() {
       </section>
 
       {/* Featured Products Section */}
-      <section className="relative mx-auto max-w-6xl overflow-hidden px-4 py-16">
-        <LogoWatermark corner="bottom-left" size={340} opacity={0.09} />
+      <section className="relative mx-auto max-w-6xl px-4 py-16">
+        <div className="mb-10">
+          <LogoSeal />
+        </div>
 
-        <div className="relative z-10 mb-8 flex items-end justify-between border-b border-[#2d2118] pb-4">
+        <div className="mb-8 flex items-end justify-between border-b border-[#2d2118] pb-4">
           <div>
             <span className="text-xs font-semibold tracking-wider text-[#c59b5f] uppercase">
               קולקציה מובחרת • ATELIER HIGHLIGHTS
@@ -293,15 +295,13 @@ export default async function HomePage() {
         </div>
 
         {products.length > 0 ? (
-          <div className="relative z-10 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
             {products.map((p) => (
               <ProductCard key={p.id} product={p} />
             ))}
           </div>
         ) : (
-          <div className="relative z-10">
-            <EmptyState label="עדיין לא הועלו מוצרים לקטלוג. מוצרים שיועלו יופיעו כאן בעיצוב הבוטיק." />
-          </div>
+          <EmptyState label="עדיין לא הועלו מוצרים לקטלוג. מוצרים שיועלו יופיעו כאן בעיצוב הבוטיק." />
         )}
       </section>
 
@@ -332,7 +332,7 @@ export default async function HomePage() {
 
       {/* Atelier Banner / Callout */}
       <section className="relative overflow-hidden border-t border-[#2d2118] bg-gradient-to-b from-[#140e0b] to-[#0c0907] py-16">
-        <LogoWatermark corner="center" size={520} opacity={0.07} />
+        <LogoWatermark corner="center" size={300} opacity={0.06} />
 
         <div className="relative z-10 mx-auto flex max-w-4xl flex-col items-center px-4 text-center">
           <span className="font-serif-hebrew text-lg italic text-[#c59b5f]">
