@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { FREE_SHIPPING_THRESHOLD_ILS } from "@/lib/constants";
 
 const DEALS = [
   {
@@ -12,7 +13,7 @@ const DEALS = [
   {
     icon: "🚚",
     highlight: "משלוח חינם:",
-    text: "בהזמנה מעל ₪299 עד פתח הבית בכל רחבי הארץ",
+    text: `בהזמנה מעל ₪${FREE_SHIPPING_THRESHOLD_ILS} עד פתח הבית בכל רחבי הארץ`,
     href: "/shipping",
   },
   {

@@ -3,7 +3,7 @@
 import { adminDb } from "@/lib/firebase/admin";
 import { getSessionUser } from "@/lib/auth/session";
 import { createPaymentSession, GrowNotConfiguredError } from "@/lib/grow/client";
-import type { Order, OrderItem } from "@/lib/types";
+import type { Order, OrderItem, Product } from "@/lib/types";
 
 type PlaceOrderInput = {
   items: OrderItem[];
@@ -17,18 +17,45 @@ export type PlaceOrderResult =
   | { ok: true; paymentUrl: string }
   | { ok: false; error: string };
 
+// Re-derive price and quantity from Firestore instead of trusting the
+// client — a modified cart line should never be able to set its own price.
+// Custom/bespoke items (from the customizer) use a synthetic productId with
+// no catalog doc behind it, so those are left as sent.
+async function repriceItem(item: OrderItem): Promise<OrderItem> {
+  if (item.customArtworkUrl) return item;
+
+  const quantity = Math.max(1, Math.round(item.quantity) || 1);
+
+  const doc = await adminDb.collection("products").doc(item.productId).get();
+  if (!doc.exists) return { ...item, quantity };
+
+  const product = doc.data() as Product;
+  const wholesaleActive =
+    typeof product.wholesalePriceIls === "number" &&
+    product.wholesalePriceIls > 0 &&
+    quantity >= (product.wholesaleMinQty ?? 10);
+
+  return {
+    ...item,
+    quantity,
+    name: product.name,
+    priceIls: wholesaleActive ? product.wholesalePriceIls! : product.priceIls,
+  };
+}
+
 export async function placeOrder(input: PlaceOrderInput): Promise<PlaceOrderResult> {
   if (input.items.length === 0) return { ok: false, error: "העגלה ריקה." };
 
-  const totalIls = input.items.reduce((sum, i) => sum + i.priceIls * i.quantity, 0);
+  const items = await Promise.all(input.items.map(repriceItem));
+  const totalIls = items.reduce((sum, i) => sum + i.priceIls * i.quantity, 0);
   const now = new Date().toISOString();
-  const session = await getSessionUser();
+  const authSession = await getSessionUser();
 
-  const hasCustomItems = input.items.some((i) => Boolean(i.customArtworkUrl));
+  const hasCustomItems = items.some((i) => Boolean(i.customArtworkUrl));
 
   const order: Omit<Order, "id"> = {
-    ...(session ? { userId: session.uid } : {}),
-    items: input.items,
+    ...(authSession ? { userId: authSession.uid } : {}),
+    items,
     totalIls,
     status: "pending",
     productionStatus: hasCustomItems ? "pending_production" : undefined,
@@ -43,7 +70,7 @@ export async function placeOrder(input: PlaceOrderInput): Promise<PlaceOrderResu
   try {
     const ref = await adminDb.collection("orders").add(order);
 
-    const session = await createPaymentSession({
+    const paymentSession = await createPaymentSession({
       orderId: ref.id,
       amountIls: totalIls,
       customerName: input.customerName,
@@ -52,7 +79,7 @@ export async function placeOrder(input: PlaceOrderInput): Promise<PlaceOrderResu
       cancelUrl: `${process.env.NEXT_PUBLIC_SITE_URL ?? ""}/checkout?cancelled=1`,
     });
 
-    return { ok: true, paymentUrl: session.paymentUrl };
+    return { ok: true, paymentUrl: paymentSession.paymentUrl };
   } catch (err) {
     if (err instanceof GrowNotConfiguredError) {
       return {

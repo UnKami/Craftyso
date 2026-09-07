@@ -136,7 +136,7 @@ export function TriptychHeroVisual() {
       <div className="pointer-events-none absolute -inset-6 rounded-full bg-[radial-gradient(circle,_rgba(212,175,55,0.28)_0%,_rgba(197,155,95,0.12)_45%,_transparent_75%)] blur-3xl animate-pulse" />
 
       {/* Triptych Wrapper with responsive scale */}
-      <div className="relative flex items-center justify-center gap-4 transform scale-[0.70] xs:scale-[0.80] sm:scale-[0.90] md:scale-95 lg:scale-100 xl:scale-105 transition-transform duration-500">
+      <div className="relative flex items-center justify-center gap-4 transform scale-[0.55] sm:scale-[0.80] md:scale-95 lg:scale-100 xl:scale-105 transition-transform duration-500">
         {/* ============================================================ */}
         {/* PANEL 1: Left Frame — live mirror of the center video's crop  */}
         {/* ============================================================ */}

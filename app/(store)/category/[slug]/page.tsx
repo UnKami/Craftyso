@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { ProductCard } from "@/components/store/ProductCard";
+import { PaginatedProductGrid } from "@/components/store/PaginatedProductGrid";
 import { getCategoryBySlug, getProductsByCategory } from "@/lib/firebase/queries";
 
 type Props = { params: Promise<{ slug: string }> };
@@ -30,11 +30,7 @@ export default async function CategoryPage({ params }: Props) {
       </div>
 
       {products.length > 0 ? (
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-          {products.map((p) => (
-            <ProductCard key={p.id} product={p} />
-          ))}
-        </div>
+        <PaginatedProductGrid products={products} />
       ) : (
         <div className="rounded-2xl border border-dashed border-[#382a20] bg-[#140e0b]/60 p-12 text-center text-sm text-[#aa9c8d]">
           עדיין אין מוצרים זמינים בקטגוריה זו.

@@ -81,7 +81,11 @@ export default function CartPage() {
                 min={1}
                 value={line.quantity}
                 onChange={(e) =>
-                  setQuantity(line.productId, Number(e.target.value) || 1, line.customArtworkUrl)
+                  setQuantity(
+                    line.productId,
+                    Math.max(1, Number(e.target.value) || 1),
+                    line.customArtworkUrl
+                  )
                 }
                 className="w-16 rounded-lg border border-[#c59b5f]/40 bg-[#1a130f] px-2 py-1 text-center text-[#f3ede2] outline-none focus:border-[#dfb37c]"
               />

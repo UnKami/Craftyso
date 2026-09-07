@@ -23,7 +23,7 @@ export default async function ProductPage({ params }: Props) {
   if (!product) notFound();
 
   const [relatedProducts, featuredProducts, reviews] = await Promise.all([
-    getProductsByCategory(product.categoryId),
+    getProductsByCategory(product.categoryId, 8),
     getFeaturedProducts(product.id, 8),
     getReviewsForProduct(product.id),
   ]);

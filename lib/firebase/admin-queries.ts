@@ -17,14 +17,14 @@ function withId<T>(doc: FirebaseFirestore.QueryDocumentSnapshot): T {
 
 export async function listLeads(): Promise<Lead[]> {
   return safe(async () => {
-    const snap = await adminDb.collection("leads").orderBy("createdAt", "desc").limit(200).get();
+    const snap = await adminDb.collection("leads").orderBy("createdAt", "desc").get();
     return snap.docs.map((d) => withId<Lead>(d));
   }, []);
 }
 
 export async function listOrders(): Promise<Order[]> {
   return safe(async () => {
-    const snap = await adminDb.collection("orders").orderBy("createdAt", "desc").limit(200).get();
+    const snap = await adminDb.collection("orders").orderBy("createdAt", "desc").get();
     return snap.docs.map((d) => withId<Order>(d));
   }, []);
 }
@@ -55,14 +55,14 @@ export async function listReviewsForProduct(productId: string): Promise<Review[]
 
 export async function listCampaigns(): Promise<Campaign[]> {
   return safe(async () => {
-    const snap = await adminDb.collection("campaigns").orderBy("createdAt", "desc").limit(200).get();
+    const snap = await adminDb.collection("campaigns").orderBy("createdAt", "desc").get();
     return snap.docs.map((d) => withId<Campaign>(d));
   }, []);
 }
 
 export async function listSocialPosts(): Promise<SocialPost[]> {
   return safe(async () => {
-    const snap = await adminDb.collection("socialPosts").orderBy("createdAt", "desc").limit(200).get();
+    const snap = await adminDb.collection("socialPosts").orderBy("createdAt", "desc").get();
     return snap.docs.map((d) => withId<SocialPost>(d));
   }, []);
 }

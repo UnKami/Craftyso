@@ -41,14 +41,27 @@ export async function getPublishedProducts(limit = 12): Promise<Product[]> {
   }, []);
 }
 
-export async function getProductsByCategory(categoryId: string): Promise<Product[]> {
+export async function getProductsByCategory(categoryId: string, limit?: number): Promise<Product[]> {
   return safe(async () => {
-    const snap = await adminDb
+    let query = adminDb
       .collection("products")
       .where("categoryId", "==", categoryId)
-      .where("published", "==", true)
-      .get();
+      .where("published", "==", true) as FirebaseFirestore.Query;
+    if (limit) query = query.limit(limit);
+    const snap = await query.get();
     return snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }) as Product);
+  }, []);
+}
+
+export async function searchProducts(query: string, limit = 60): Promise<Product[]> {
+  return safe(async () => {
+    const q = query.trim().toLowerCase();
+    if (!q) return [];
+    const snap = await adminDb.collection("products").where("published", "==", true).get();
+    return snap.docs
+      .map((doc) => ({ id: doc.id, ...doc.data() }) as Product)
+      .filter((p) => p.name.toLowerCase().includes(q))
+      .slice(0, limit);
   }, []);
 }
 
