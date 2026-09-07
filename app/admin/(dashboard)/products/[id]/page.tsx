@@ -11,14 +11,15 @@ import { PublishToggle } from "@/components/admin/PublishToggle";
 type Props = { params: Promise<{ id: string }> };
 
 export default async function ProductDetailAdminPage({ params }: Props) {
-  const { id } = await params;
-  const [product, categories, reviews] = await Promise.all([
-    getProductById(id),
-    getCategories(),
-    listReviewsForProduct(id),
-  ]);
-
+  const rawParams = await params;
+  const decodedId = decodeURIComponent(rawParams.id);
+  const product = (await getProductById(decodedId)) || (await getProductById(rawParams.id));
   if (!product) notFound();
+
+  const [categories, reviews] = await Promise.all([
+    getCategories(),
+    listReviewsForProduct(product.id),
+  ]);
 
   return (
     <div className="flex flex-col gap-5">
