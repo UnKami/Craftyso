@@ -16,6 +16,11 @@ export type ProductVariant = {
   stock?: number;
 };
 
+export type ProductSpec = {
+  label: string;
+  value: string;
+};
+
 export type Product = {
   id: string;
   slug: string;
@@ -26,12 +31,27 @@ export type Product = {
   wholesalePriceIls?: number;
   wholesaleMinQty?: number;
   images: string[];
+  specs?: ProductSpec[];
+  shippingNote?: string;
+  featured?: boolean;
   variants?: ProductVariant[];
   stock?: number;
   published: boolean;
   sourceUrl?: string;
   createdAt: string;
   updatedAt: string;
+};
+
+export type Review = {
+  id: string;
+  productId: string;
+  authorName: string;
+  rating: number;
+  title?: string;
+  body: string;
+  verifiedPurchase?: boolean;
+  published: boolean;
+  createdAt: string;
 };
 
 export type OrderStatus = "pending" | "paid" | "failed" | "fulfilled" | "cancelled";

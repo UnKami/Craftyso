@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import type { Category, Product } from "@/lib/types";
 import { PublishToggle } from "@/components/admin/PublishToggle";
 import { ProductPricingRow } from "@/components/admin/ProductPricingRow";
@@ -69,6 +70,7 @@ export function ProductsTable({ products, categories }: { products: Product[]; c
               <th className="p-3 font-medium">קטגוריה</th>
               <th className="p-3 font-medium">מחיר יחידה ומחיר לכמות</th>
               <th className="p-3 font-medium">סטטוס</th>
+              <th className="p-3 font-medium"></th>
             </tr>
           </thead>
           <tbody>
@@ -77,7 +79,11 @@ export function ProductsTable({ products, categories }: { products: Product[]; c
                 <td className="p-3">
                   <ProductImageCell product={p} />
                 </td>
-                <td className="p-3 font-medium text-ink">{p.name}</td>
+                <td className="p-3 font-medium text-ink">
+                  <Link href={`/admin/products/${p.id}`} className="hover:text-brand hover:underline">
+                    {p.name}
+                  </Link>
+                </td>
                 <td className="p-3">{categoryName.get(p.categoryId) ?? "—"}</td>
                 <td className="p-3">
                   <ProductPricingRow product={p} />
@@ -85,11 +91,19 @@ export function ProductsTable({ products, categories }: { products: Product[]; c
                 <td className="p-3">
                   <PublishToggle productId={p.id} published={p.published} />
                 </td>
+                <td className="p-3">
+                  <Link
+                    href={`/admin/products/${p.id}`}
+                    className="rounded border border-border px-2 py-0.5 text-xs text-ink-muted hover:border-brand hover:text-brand"
+                  >
+                    פרטים מלאים
+                  </Link>
+                </td>
               </tr>
             ))}
             {pageItems.length === 0 && (
               <tr>
-                <td colSpan={5} className="p-6 text-center text-ink-muted">
+                <td colSpan={6} className="p-6 text-center text-ink-muted">
                   לא נמצאו מוצרים התואמים את החיפוש.
                 </td>
               </tr>

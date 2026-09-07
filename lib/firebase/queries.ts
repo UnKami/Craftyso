@@ -1,6 +1,6 @@
 import "server-only";
 import { adminDb } from "./admin";
-import type { Category, Order, Product } from "@/lib/types";
+import type { Category, Order, Product, Review } from "@/lib/types";
 
 // Firestore reads fail until FIREBASE_CLIENT_EMAIL/PRIVATE_KEY (or ADC) are
 // configured. Swallow that here so pages render an empty state instead of
@@ -59,6 +59,34 @@ export async function getProductBySlug(slug: string): Promise<Product | null> {
     const doc = snap.docs[0]!;
     return { id: doc.id, ...doc.data() } as Product;
   }, null);
+}
+
+export async function getFeaturedProducts(excludeId: string, limit = 8): Promise<Product[]> {
+  return safe(async () => {
+    const snap = await adminDb
+      .collection("products")
+      .where("published", "==", true)
+      .where("featured", "==", true)
+      .limit(limit + 1)
+      .get();
+    return snap.docs
+      .map((doc) => ({ id: doc.id, ...doc.data() }) as Product)
+      .filter((p) => p.id !== excludeId)
+      .slice(0, limit);
+  }, []);
+}
+
+export async function getReviewsForProduct(productId: string): Promise<Review[]> {
+  return safe(async () => {
+    const snap = await adminDb
+      .collection("reviews")
+      .where("productId", "==", productId)
+      .where("published", "==", true)
+      .get();
+    return snap.docs
+      .map((doc) => ({ id: doc.id, ...doc.data() }) as Review)
+      .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+  }, []);
 }
 
 export async function getOrdersForUser(uid: string): Promise<Order[]> {

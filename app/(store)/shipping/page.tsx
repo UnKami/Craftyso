@@ -1,3 +1,10 @@
+import {
+  COURIER_PRICE_ILS,
+  FREE_SHIPPING_THRESHOLD_ILS,
+  REGISTERED_MAIL_PRICE_ILS,
+  RETURN_WINDOW_DAYS,
+} from "@/lib/constants";
+
 export const metadata = { title: "משלוחים והחזרות" };
 
 export default function ShippingPage() {
@@ -15,7 +22,11 @@ export default function ShippingPage() {
         <div className="rounded-xl border border-[#2d2118] bg-[#140e0b] p-6">
           <h3 className="font-serif-hebrew text-base font-bold text-[#eed3a2] mb-2">אפשרויות משלוח</h3>
           <ul className="list-disc pr-5 space-y-2">
-            <li><strong>שליח עד הבית:</strong> 1-3 ימי עסקים לכל חלקי הארץ (חינם בהזמנות מעל ₪299).</li>
+            <li>
+              <strong>שליח עד הבית:</strong> 1-3 ימי עסקים לכל חלקי הארץ (₪{COURIER_PRICE_ILS}, חינם
+              בהזמנות מעל ₪{FREE_SHIPPING_THRESHOLD_ILS}).
+            </li>
+            <li><strong>דואר רשום:</strong> ₪{REGISTERED_MAIL_PRICE_ILS}.</li>
             <li><strong>איסוף עצמי מהבוטיק:</strong> רחוב לבינובסקי 9, תל אביב (קומת קרקע) – בתיאום מראש.</li>
           </ul>
         </div>
@@ -23,7 +34,8 @@ export default function ShippingPage() {
         <div className="rounded-xl border border-[#2d2118] bg-[#140e0b] p-6">
           <h3 className="font-serif-hebrew text-base font-bold text-[#eed3a2] mb-2">החזרות והחלפות</h3>
           <p>
-            ניתן להחזיר או להחליף פריטים שנרכשו באריזתם המקורית תוך 14 ימים מיום קבלת המשלוח, בהתאם לחוק הגנת הצרכן.
+            ניתן להחזיר או להחליף פריטים שנרכשו באריזתם המקורית תוך {RETURN_WINDOW_DAYS} ימים מיום קבלת
+            המשלוח, בהתאם לחוק הגנת הצרכן.
           </p>
         </div>
       </div>

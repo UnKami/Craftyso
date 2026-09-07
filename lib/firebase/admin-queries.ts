@@ -1,6 +1,6 @@
 import "server-only";
 import { adminDb } from "./admin";
-import type { AdminUser, Campaign, ContentPage, Lead, Order, Product, SocialPost } from "@/lib/types";
+import type { AdminUser, Campaign, ContentPage, Lead, Order, Product, Review, SocialPost } from "@/lib/types";
 
 async function safe<T>(fn: () => Promise<T>, fallback: T): Promise<T> {
   try {
@@ -33,6 +33,23 @@ export async function listAllProducts(): Promise<Product[]> {
   return safe(async () => {
     const snap = await adminDb.collection("products").orderBy("updatedAt", "desc").get();
     return snap.docs.map((d) => withId<Product>(d));
+  }, []);
+}
+
+export async function getProductById(id: string): Promise<Product | null> {
+  return safe(async () => {
+    const doc = await adminDb.collection("products").doc(id).get();
+    if (!doc.exists) return null;
+    return withId<Product>(doc as FirebaseFirestore.QueryDocumentSnapshot);
+  }, null);
+}
+
+export async function listReviewsForProduct(productId: string): Promise<Review[]> {
+  return safe(async () => {
+    const snap = await adminDb.collection("reviews").where("productId", "==", productId).get();
+    return snap.docs
+      .map((d) => withId<Review>(d))
+      .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
   }, []);
 }
 

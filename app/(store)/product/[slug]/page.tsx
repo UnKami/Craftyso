@@ -1,11 +1,17 @@
-import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getProductBySlug, getProductsByCategory } from "@/lib/firebase/queries";
+import {
+  getFeaturedProducts,
+  getProductBySlug,
+  getProductsByCategory,
+  getReviewsForProduct,
+} from "@/lib/firebase/queries";
 import { formatIls } from "@/lib/format";
 import { AddToCart } from "@/components/store/AddToCart";
 import { ProductTabs } from "@/components/store/ProductTabs";
 import { ProductCard } from "@/components/store/ProductCard";
+import { ProductGallery } from "@/components/store/ProductGallery";
+import { ProductReviews } from "@/components/store/ProductReviews";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -16,10 +22,13 @@ export default async function ProductPage({ params }: Props) {
     (await getProductBySlug(decodedSlug)) || (await getProductBySlug(rawParams.slug));
   if (!product) notFound();
 
-  const relatedProducts = await getProductsByCategory(product.categoryId);
+  const [relatedProducts, featuredProducts, reviews] = await Promise.all([
+    getProductsByCategory(product.categoryId),
+    getFeaturedProducts(product.id, 8),
+    getReviewsForProduct(product.id),
+  ]);
   const filteredRelated = relatedProducts.filter((p) => p.id !== product.id).slice(0, 4);
 
-  const image = product.images[0];
   const minQty = product.wholesaleMinQty ?? 10;
   const wholesalePrice =
     typeof product.wholesalePriceIls === "number" && product.wholesalePriceIls > 0
@@ -29,6 +38,10 @@ export default async function ProductPage({ params }: Props) {
   const discountPercent = Math.round(
     ((product.priceIls - wholesalePrice) / (product.priceIls || 1)) * 100
   );
+
+  const reviewCount = reviews.length;
+  const averageRating =
+    reviewCount > 0 ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviewCount : 0;
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-12">
@@ -47,43 +60,30 @@ export default async function ProductPage({ params }: Props) {
 
       {/* Main Spotlight Product Presentation Grid */}
       <div className="grid gap-12 lg:grid-cols-12 lg:gap-14">
-        {/* Left Column (in RTL): Spotlight Image Stage */}
+        {/* Left Column (in RTL): Image Gallery */}
         <div className="lg:col-span-6">
-          <div className="relative aspect-square w-full overflow-hidden rounded-3xl border-2 border-[#c59b5f]/50 bg-[#140e0b] shadow-[0_20px_60px_rgba(0,0,0,0.85)]">
-            {/* Ambient gold spotlight radial halo */}
-            <div className="pointer-events-none absolute inset-0 z-0 bg-[radial-gradient(circle_at_center,_rgba(201,154,101,0.22)_0%,_transparent_70%)]" />
+          <ProductGallery
+            images={product.images}
+            name={product.name}
+            overlay={
+              <>
+                <div className="absolute top-4 right-4 flex flex-col gap-2">
+                  <span className="rounded-full border border-[#c59b5f]/60 bg-[#120c08]/90 px-3 py-1 text-xs font-bold text-[#eed3a2] backdrop-blur-md shadow-md">
+                    ✦ איכות קוטור
+                  </span>
+                  <span className="rounded-full border border-[#7fe09b]/40 bg-[#120c08]/90 px-3 py-1 text-xs font-semibold text-[#7fe09b] backdrop-blur-md">
+                    ✓ זמין במלאי למשלוח מיידי
+                  </span>
+                </div>
 
-            {image ? (
-              <Image
-                src={image}
-                alt={product.name}
-                fill
-                priority
-                sizes="(min-width: 1024px) 50vw, 100vw"
-                className="object-cover transition-transform duration-700 hover:scale-105"
-              />
-            ) : (
-              <div className="flex h-full items-center justify-center text-[#8a7b6b] text-base">
-                אין תמונה זמינה
-              </div>
-            )}
-
-            {/* Corner Couture Accent Badges */}
-            <div className="absolute top-4 right-4 flex flex-col gap-2">
-              <span className="rounded-full border border-[#c59b5f]/60 bg-[#120c08]/90 px-3 py-1 text-xs font-bold text-[#eed3a2] backdrop-blur-md shadow-md">
-                ✦ איכות קוטור
-              </span>
-              <span className="rounded-full border border-[#7fe09b]/40 bg-[#120c08]/90 px-3 py-1 text-xs font-semibold text-[#7fe09b] backdrop-blur-md">
-                ✓ זמין במלאי למשלוח מיידי
-              </span>
-            </div>
-
-            {discountPercent > 0 && (
-              <div className="absolute bottom-4 left-4 rounded-xl border border-[#c59b5f]/50 bg-[#1f1510]/95 px-3 py-1.5 text-xs font-bold text-gold-gradient backdrop-blur-md">
-                מחירון כמויות: חיסכון של {discountPercent}%!
-              </div>
-            )}
-          </div>
+                {discountPercent > 0 && (
+                  <div className="absolute bottom-4 left-4 rounded-xl border border-[#c59b5f]/50 bg-[#1f1510]/95 px-3 py-1.5 text-xs font-bold text-gold-gradient backdrop-blur-md">
+                    מחירון כמויות: חיסכון של {discountPercent}%!
+                  </div>
+                )}
+              </>
+            }
+          />
         </div>
 
         {/* Right Column (in RTL): Product Information & Volume Pricing Box */}
@@ -95,6 +95,18 @@ export default async function ProductPage({ params }: Props) {
             <h1 className="font-serif-hebrew mt-1 text-2xl font-bold leading-snug text-[#fbf8f2] sm:text-3xl md:text-4xl">
               {product.name}
             </h1>
+
+            {reviewCount > 0 && (
+              <a href="#reviews" className="mt-2 flex items-center gap-2 text-sm hover:opacity-80">
+                <span className="text-[#eed3a2]" aria-hidden="true">
+                  {"★".repeat(Math.round(averageRating))}
+                  <span className="text-[#3d2b1f]">{"★".repeat(5 - Math.round(averageRating))}</span>
+                </span>
+                <span className="text-[#aa9c8d]">
+                  {averageRating.toFixed(1)} · {reviewCount} חוות דעת
+                </span>
+              </a>
+            )}
           </div>
 
           {/* Dual Volume Tier Pricing Box (Highlighted) */}
@@ -158,19 +170,23 @@ export default async function ProductPage({ params }: Props) {
         </div>
       </div>
 
-      {/* Craftsmanship Application Tabs */}
-      <ProductTabs description={product.description} />
+      {/* Description / Specs / Shipping Tabs */}
+      <ProductTabs
+        description={product.description}
+        specs={product.specs}
+        shippingNote={product.shippingNote}
+      />
 
-      {/* Complementary & Related Items Grid */}
+      {/* Similar Products (same category) */}
       {filteredRelated.length > 0 && (
-        <section className="mt-20 border-t border-[#2d2118] pt-12">
+        <section className="mt-16 border-t border-[#2d2118] pt-12">
           <div className="mb-8 flex items-end justify-between">
             <div>
               <span className="text-xs font-semibold tracking-wider text-[#c59b5f] uppercase">
                 השלימו את העיצוב
               </span>
               <h3 className="font-serif-hebrew text-2xl font-bold text-[#fbf8f2] sm:text-3xl">
-                פריטים משלימים שמתאימים לפריט זה
+                מוצרים דומים
               </h3>
             </div>
           </div>
@@ -182,6 +198,31 @@ export default async function ProductPage({ params }: Props) {
           </div>
         </section>
       )}
+
+      {/* Personalized "For You" Recommendations */}
+      {featuredProducts.length > 0 && (
+        <section className="mt-16 border-t border-[#2d2118] pt-12">
+          <div className="mb-8 flex items-end justify-between">
+            <div>
+              <span className="text-xs font-semibold tracking-wider text-[#c59b5f] uppercase">
+                נבחר במיוחד עבורך
+              </span>
+              <h3 className="font-serif-hebrew text-2xl font-bold text-[#fbf8f2] sm:text-3xl">
+                במיוחד בשבילך
+              </h3>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+            {featuredProducts.map((p) => (
+              <ProductCard key={p.id} product={p} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Customer Reviews */}
+      <ProductReviews reviews={reviews} />
     </div>
   );
 }
