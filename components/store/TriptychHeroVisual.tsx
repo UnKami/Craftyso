@@ -117,11 +117,7 @@ export function TriptychHeroVisual() {
           rightCanvas.height
         );
       }
-      if (video && "requestVideoFrameCallback" in video) {
-        (video as HTMLVideoElement & { requestVideoFrameCallback: (cb: () => void) => number }).requestVideoFrameCallback(draw);
-      } else {
-        requestAnimationFrame(draw);
-      }
+      requestAnimationFrame(draw);
     }
     draw();
 
