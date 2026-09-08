@@ -10,7 +10,7 @@ type Charm = {
   pivotFracX: number;
   pivotFracY: number;
   naturalAspect: number; // height / width, filled in once the image loads
-  renderWidth: number; // target on-screen width in css px
+  widthFrac: number; // target on-screen width as a fraction of the chain column's width
   screenYFrac: number; // fixed position down the viewport, independent of scroll/chain loop
   phase: number; // offsets the idle sway so multiple charms don't move in lockstep
   angle: number;
@@ -48,16 +48,22 @@ export function PersistentGoldChain() {
     let currentScrollY = window.scrollY;
     let smoothScrollY = window.scrollY;
 
-    // --- Hanging letter charms: real "S" and "O" cropped from the logo ---
+    // --- Hanging letter charms: standalone "S"/"O" glyphs (see
+    // scripts/draw_letter_charms.mjs), styled to match the logo's gold
+    // ribbon look — drawn as complete closed shapes rather than cropped out
+    // of the connected wordmark, which left visible leftover connector
+    // fragments and an unnaturally chopped edge. Sized deliberately larger
+    // than the chain's own links so each charm reads as a distinct letter
+    // instead of blending into the chain's own hollow-link texture.
     const charms: Charm[] = [
       {
         img: new Image(),
         loaded: false,
-        pivotFracX: 259 / 472,
-        pivotFracY: 4 / 590,
-        naturalAspect: 590 / 472,
-        renderWidth: 34,
-        screenYFrac: 0.6,
+        pivotFracX: 0.575,
+        pivotFracY: 0.073,
+        naturalAspect: 300 / 200,
+        widthFrac: 0.72,
+        screenYFrac: 0.52,
         phase: 0,
         angle: reducedMotion ? 0 : -0.32,
         angularVelocity: 0,
@@ -66,11 +72,11 @@ export function PersistentGoldChain() {
       {
         img: new Image(),
         loaded: false,
-        pivotFracX: 180 / 488,
-        pivotFracY: 2 / 590,
-        naturalAspect: 590 / 488,
-        renderWidth: 30,
-        screenYFrac: 0.71,
+        pivotFracX: 0.455,
+        pivotFracY: 0.04,
+        naturalAspect: 300 / 220,
+        widthFrac: 0.66,
+        screenYFrac: 0.74,
         phase: 2.1,
         angle: reducedMotion ? 0 : 0.26,
         angularVelocity: 0,
@@ -122,7 +128,7 @@ export function PersistentGoldChain() {
         charm.angle += charm.angularVelocity * dt;
       }
 
-      const renderW = charm.renderWidth;
+      const renderW = width * charm.widthFrac;
       const renderH = renderW * charm.naturalAspect;
       const pivotX = charm.pivotFracX * renderW;
       const pivotY = charm.pivotFracY * renderH;
