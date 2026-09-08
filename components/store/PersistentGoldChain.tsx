@@ -2,11 +2,33 @@
 
 import { useEffect, useRef } from "react";
 
+type Charm = {
+  img: HTMLImageElement;
+  loaded: boolean;
+  // Pivot point as a fraction of the image's own width/height — the point
+  // that stays fixed under rotation (the S's hook loop, the O's ring top).
+  pivotFracX: number;
+  pivotFracY: number;
+  naturalAspect: number; // height / width, filled in once the image loads
+  renderWidth: number; // target on-screen width in css px
+  screenYFrac: number; // fixed position down the viewport, independent of scroll/chain loop
+  phase: number; // offsets the idle sway so multiple charms don't move in lockstep
+  angle: number;
+  angularVelocity: number;
+  dropStart: number | null; // performance.now() timestamp, set on first frame
+};
+
+function easeOutBack(t: number) {
+  const c1 = 1.70158;
+  const c3 = c1 + 1;
+  return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2);
+}
+
 export function PersistentGoldChain() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -26,6 +48,44 @@ export function PersistentGoldChain() {
     let currentScrollY = window.scrollY;
     let smoothScrollY = window.scrollY;
 
+    // --- Hanging letter charms: real "S" and "O" cropped from the logo ---
+    const charms: Charm[] = [
+      {
+        img: new Image(),
+        loaded: false,
+        pivotFracX: 259 / 472,
+        pivotFracY: 4 / 590,
+        naturalAspect: 590 / 472,
+        renderWidth: 34,
+        screenYFrac: 0.6,
+        phase: 0,
+        angle: reducedMotion ? 0 : -0.32,
+        angularVelocity: 0,
+        dropStart: null,
+      },
+      {
+        img: new Image(),
+        loaded: false,
+        pivotFracX: 180 / 488,
+        pivotFracY: 2 / 590,
+        naturalAspect: 590 / 488,
+        renderWidth: 30,
+        screenYFrac: 0.71,
+        phase: 2.1,
+        angle: reducedMotion ? 0 : 0.26,
+        angularVelocity: 0,
+        dropStart: null,
+      },
+    ];
+    charms[0].img.src = "/logo/letter-s.png";
+    charms[1].img.src = "/logo/letter-o.png";
+    charms.forEach((c) => {
+      c.img.onload = () => {
+        c.naturalAspect = c.img.naturalHeight / c.img.naturalWidth;
+        c.loaded = true;
+      };
+    });
+
     function onResize() {
       if (!canvas) return;
       width = canvas.width = canvas.clientWidth || 90;
@@ -40,6 +100,48 @@ export function PersistentGoldChain() {
     window.addEventListener("scroll", onScroll, { passive: true });
 
     let time = 0;
+    const dt = 1 / 60;
+
+    function drawCharm(charm: Charm, xOffset: number, now: number) {
+      if (!charm.loaded) return;
+      if (charm.dropStart === null) charm.dropStart = now;
+
+      const dropElapsed = (now - charm.dropStart) / 900;
+      const dropT = Math.min(1, Math.max(0, dropElapsed));
+      const eased = reducedMotion ? 1 : easeOutBack(dropT);
+
+      if (!reducedMotion) {
+        // Idle pendulum sway + scroll-reactive kick, spring-damped back to rest.
+        const idleTarget = Math.sin(time * 0.6 + charm.phase) * 0.035;
+        const scrollDiff = currentScrollY - smoothScrollY;
+        const kick = Math.max(-0.5, Math.min(0.5, scrollDiff * 0.006));
+        const springK = 9;
+        const damping = 3.4;
+        const angularAccel = (idleTarget + kick - charm.angle) * springK - charm.angularVelocity * damping;
+        charm.angularVelocity += angularAccel * dt;
+        charm.angle += charm.angularVelocity * dt;
+      }
+
+      const renderW = charm.renderWidth;
+      const renderH = renderW * charm.naturalAspect;
+      const pivotX = charm.pivotFracX * renderW;
+      const pivotY = charm.pivotFracY * renderH;
+
+      const restY = height * charm.screenYFrac;
+      const dropOffsetY = (1 - eased) * -70;
+      const y = restY + dropOffsetY;
+
+      ctx!.save();
+      ctx!.translate(xOffset, y);
+      ctx!.rotate(charm.angle * eased);
+
+      ctx!.shadowColor = "rgba(0, 0, 0, 0.55)";
+      ctx!.shadowBlur = 5;
+      ctx!.shadowOffsetX = 1.5;
+      ctx!.shadowOffsetY = 2.5;
+      ctx!.drawImage(charm.img, -pivotX, -pivotY, renderW, renderH);
+      ctx!.restore();
+    }
 
     function render() {
       time += 0.02;
@@ -144,6 +246,15 @@ export function PersistentGoldChain() {
         ctx.restore();
       }
 
+      ctx.restore();
+
+      // Hanging charms drawn on top, in their own fixed-position (non-looping)
+      // coordinate space so they read as pendants dangling at a constant spot
+      // on the chain rather than scrolling away with the infinite link loop.
+      const now = performance.now();
+      ctx.save();
+      ctx.translate(anchorX, 0);
+      for (const charm of charms) drawCharm(charm, 0, now);
       ctx.restore();
 
       animId = requestAnimationFrame(render);
