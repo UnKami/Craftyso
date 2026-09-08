@@ -7,26 +7,12 @@ import { useRouter } from "next/navigation";
 import type { Category } from "@/lib/types";
 import { CartButton } from "./CartButton";
 import { AccountButton } from "./AccountButton";
-
-const DEFAULT_NAV_CATEGORIES = [
-  { slug: "masks", name: "מסכות" },
-  { slug: "buckles", name: "אבזמים" },
-  { slug: "fashion-accessories", name: "אביזרי אופנה" },
-  { slug: "sewing-accessories", name: "אביזרים לתפירה" },
-  { slug: "fabrics", name: "בדים" },
-  { slug: "elastic-ribbons", name: "גומי וסרטים נמתחים" },
-  { slug: "beach-hats", name: "כובעי חוף" },
-];
+import { MainNav } from "./MainNav";
 
 export function Header({ categories }: { categories: Category[] }) {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const router = useRouter();
-
-  const navItems =
-    categories.length >= 4
-      ? categories.slice(0, 8)
-      : DEFAULT_NAV_CATEGORIES;
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();
@@ -138,20 +124,7 @@ export function Header({ categories }: { categories: Category[] }) {
         </div>
       )}
 
-      {/* Sub-Navigation Categories Bar */}
-      <nav className="border-t border-[#241a13] bg-[#0f0b08]/80">
-        <div className="mx-auto flex max-w-7xl items-center justify-center gap-6 overflow-x-auto px-4 py-2.5 text-xs sm:gap-8 sm:text-sm">
-          {navItems.map((c) => (
-            <Link
-              key={c.slug}
-              href={`/category/${c.slug}`}
-              className="whitespace-nowrap text-[#bdae9e] transition hover:text-[#faebd7] hover:drop-shadow-[0_0_8px_rgba(201,154,101,0.5)] font-medium"
-            >
-              {c.name}
-            </Link>
-          ))}
-        </div>
-      </nav>
+      <MainNav categories={categories} />
     </header>
   );
 }
