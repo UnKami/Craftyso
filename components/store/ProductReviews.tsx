@@ -1,4 +1,5 @@
 import type { Review } from "@/lib/types";
+import { ProductReviewForm } from "./ProductReviewForm";
 
 function Stars({ rating, size = "text-sm" }: { rating: number; size?: string }) {
   return (
@@ -9,7 +10,19 @@ function Stars({ rating, size = "text-sm" }: { rating: number; size?: string }) 
   );
 }
 
-export function ProductReviews({ reviews }: { reviews: Review[] }) {
+export function ProductReviews({
+  reviews,
+  productId,
+  productSlug,
+  hasSession,
+  alreadyReviewed,
+}: {
+  reviews: Review[];
+  productId: string;
+  productSlug: string;
+  hasSession: boolean;
+  alreadyReviewed: boolean;
+}) {
   const count = reviews.length;
   const average = count > 0 ? reviews.reduce((sum, r) => sum + r.rating, 0) / count : 0;
 
@@ -26,6 +39,13 @@ export function ProductReviews({ reviews }: { reviews: Review[] }) {
         </span>
         <h3 className="font-serif-hebrew text-2xl font-bold text-[#fbf8f2] sm:text-3xl">חוות דעת</h3>
       </div>
+
+      <ProductReviewForm
+        productId={productId}
+        productSlug={productSlug}
+        hasSession={hasSession}
+        alreadyReviewed={alreadyReviewed}
+      />
 
       {count === 0 ? (
         <div className="rounded-2xl border border-dashed border-[#382a20] bg-[#140e0b]/60 p-8 text-center text-sm text-[#aa9c8d]">

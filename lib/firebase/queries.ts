@@ -102,6 +102,18 @@ export async function getReviewsForProduct(productId: string): Promise<Review[]>
   }, []);
 }
 
+export async function hasUserReviewedProduct(productId: string, uid: string): Promise<boolean> {
+  return safe(async () => {
+    const snap = await adminDb
+      .collection("reviews")
+      .where("productId", "==", productId)
+      .where("authorUid", "==", uid)
+      .limit(1)
+      .get();
+    return !snap.empty;
+  }, false);
+}
+
 export async function getOrdersForUser(uid: string): Promise<Order[]> {
   return safe(async () => {
     const snap = await adminDb

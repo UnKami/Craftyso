@@ -5,7 +5,9 @@ import {
   getProductBySlug,
   getProductsByCategory,
   getReviewsForProduct,
+  hasUserReviewedProduct,
 } from "@/lib/firebase/queries";
+import { getSessionUser } from "@/lib/auth/session";
 import { formatIls } from "@/lib/format";
 import { AddToCart } from "@/components/store/AddToCart";
 import { ProductTabs } from "@/components/store/ProductTabs";
@@ -22,12 +24,16 @@ export default async function ProductPage({ params }: Props) {
     (await getProductBySlug(decodedSlug)) || (await getProductBySlug(rawParams.slug));
   if (!product) notFound();
 
-  const [relatedProducts, featuredProducts, reviews] = await Promise.all([
+  const [relatedProducts, featuredProducts, reviews, sessionUser] = await Promise.all([
     getProductsByCategory(product.categoryId, 8),
     getFeaturedProducts(product.id, 8),
     getReviewsForProduct(product.id),
+    getSessionUser(),
   ]);
   const filteredRelated = relatedProducts.filter((p) => p.id !== product.id).slice(0, 4);
+  const alreadyReviewed = sessionUser
+    ? await hasUserReviewedProduct(product.id, sessionUser.uid)
+    : false;
 
   const minQty = product.wholesaleMinQty ?? 10;
   const wholesalePrice =
@@ -222,7 +228,13 @@ export default async function ProductPage({ params }: Props) {
       )}
 
       {/* Customer Reviews */}
-      <ProductReviews reviews={reviews} />
+      <ProductReviews
+        reviews={reviews}
+        productId={product.id}
+        productSlug={product.slug}
+        hasSession={Boolean(sessionUser)}
+        alreadyReviewed={alreadyReviewed}
+      />
     </div>
   );
 }

@@ -45,6 +45,7 @@ export type Product = {
 export type Review = {
   id: string;
   productId: string;
+  authorUid?: string;
   authorName: string;
   rating: number;
   title?: string;
