@@ -4,6 +4,11 @@ import { headers } from "next/headers";
 import { adminDb } from "@/lib/firebase/admin";
 import { getSessionUser } from "@/lib/auth/session";
 import {
+  normalizeEmail,
+  normalizePhone,
+  upsertAndMergeCustomerIdentity,
+} from "@/lib/customers/identity";
+import {
   COURIER_PRICE_ILS,
   FREE_SHIPPING_THRESHOLD_ILS,
   REGISTERED_MAIL_PRICE_ILS,
@@ -102,9 +107,30 @@ export async function placeOrder(input: PlaceOrderInput): Promise<PlaceOrderResu
   const now = new Date().toISOString();
   const authSession = await getSessionUser();
   const hasCustomItems = items.some((i) => Boolean(i.customArtworkUrl));
+  const resolvedAddress =
+    input.shippingMethod === "pickup"
+      ? "איסוף עצמי — רחוב לבינובסקי 9, תל אביב"
+      : shippingAddress;
+
+  // Aggregate customer identity by UID, email, and phone so past & future
+  // orders stay linked even if the customer checks out as a guest or switches
+  // login methods later.
+  const customerProfile = await upsertAndMergeCustomerIdentity({
+    uid: authSession?.uid,
+    email: customerEmail,
+    phone: customerPhone,
+    name: customerName,
+    shippingAddress: input.shippingMethod === "pickup" ? undefined : shippingAddress,
+  }).catch((err) => {
+    console.warn("[checkout] customer identity upsert failed:", err);
+    return null;
+  });
 
   const order: Omit<Order, "id"> = {
     ...(authSession ? { userId: authSession.uid } : {}),
+    ...(customerProfile ? { customerId: customerProfile.id } : {}),
+    customerEmailNormalized: normalizeEmail(customerEmail),
+    customerPhoneNormalized: normalizePhone(customerPhone),
     items,
     subtotalIls,
     shippingMethod: input.shippingMethod,
@@ -115,10 +141,7 @@ export async function placeOrder(input: PlaceOrderInput): Promise<PlaceOrderResu
     customerName,
     customerEmail,
     customerPhone,
-    shippingAddress:
-      input.shippingMethod === "pickup"
-        ? "איסוף עצמי — רחוב לבינובסקי 9, תל אביב"
-        : shippingAddress,
+    shippingAddress: resolvedAddress,
     createdAt: now,
     updatedAt: now,
   };

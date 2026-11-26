@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useState, type FormEvent } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
@@ -11,9 +11,31 @@ import { doc, getDoc } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase/client";
 
 export default function AccountLoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="mx-auto flex min-h-[60vh] max-w-md items-center justify-center px-4 text-sm text-ink-muted">
+          טוען...
+        </div>
+      }
+    >
+      <AccountLoginContent />
+    </Suspense>
+  );
+}
+
+function AccountLoginContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const nextParam = searchParams.get("next");
+  const safeNext =
+    nextParam && nextParam.startsWith("/") && !nextParam.startsWith("//")
+      ? nextParam
+      : null;
+
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -37,12 +59,20 @@ export default function AccountLoginPage() {
       const res = await fetch("/api/auth/session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ idToken }),
+        body: JSON.stringify({
+          idToken,
+          phone: phone.trim() || undefined,
+          name: name.trim() || undefined,
+        }),
       });
       if (!res.ok) throw new Error("session creation failed");
 
-      const adminDoc = await getDoc(doc(db, "users", cred.user.uid));
-      router.push(adminDoc.exists() ? "/admin" : "/account");
+      if (safeNext) {
+        router.push(safeNext);
+      } else {
+        const adminDoc = await getDoc(doc(db, "users", cred.user.uid));
+        router.push(adminDoc.exists() ? "/admin" : "/account");
+      }
       router.refresh();
     } catch {
       setError(
@@ -59,6 +89,7 @@ export default function AccountLoginPage() {
     <div className="mx-auto flex min-h-[70vh] max-w-md flex-col justify-center px-4 py-14">
       <div className="mb-6 flex gap-2 rounded-full bg-surface-muted p-1 text-sm">
         <button
+          type="button"
           onClick={() => setMode("signin")}
           className={`flex-1 rounded-full py-2 font-medium transition ${
             mode === "signin" ? "bg-surface shadow-sm text-ink" : "text-ink-muted"
@@ -67,6 +98,7 @@ export default function AccountLoginPage() {
           התחברות
         </button>
         <button
+          type="button"
           onClick={() => setMode("signup")}
           className={`flex-1 rounded-full py-2 font-medium transition ${
             mode === "signup" ? "bg-surface shadow-sm text-ink" : "text-ink-muted"
@@ -81,44 +113,61 @@ export default function AccountLoginPage() {
       </h1>
       <p className="mb-6 text-sm text-ink-muted">
         {mode === "signin"
-          ? "התחברו כדי לצפות בהזמנות ובפרטי החשבון שלכם."
-          : "פתחו חשבון כדי לעקוב אחרי ההזמנות שלכם ולקנות מהר יותר בפעם הבאה."}
+          ? "התחברו עם האימייל שבו הזמנתם כדי לראות את כל ההזמנות הקודמות שלכם."
+          : "פתחו חשבון עם האימייל או הטלפון שבו הזמנתם — ההיסטוריה שלכם תתמזג אוטומטית."}
       </p>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         {mode === "signup" && (
-          <label className="flex flex-col gap-1 text-sm text-ink-muted">
-            שם מלא
-            <input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="rounded-lg border border-border px-3 py-2 text-ink outline-none focus:border-brand"
-            />
-          </label>
+          <>
+            <label className="flex flex-col gap-1 text-sm text-ink-muted">
+              שם מלא
+              <input
+                autoComplete="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="rounded-lg border border-border bg-surface px-3 py-2 text-ink outline-none focus:border-brand"
+              />
+            </label>
+            <label className="flex flex-col gap-1 text-sm text-ink-muted">
+              טלפון נייד (מומלץ — לשיוך הזמנות קודמות לפי מספר טלפון)
+              <input
+                type="tel"
+                autoComplete="tel"
+                inputMode="tel"
+                placeholder="050-0000000"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                className="rounded-lg border border-border bg-surface px-3 py-2 text-ink outline-none focus:border-brand"
+              />
+            </label>
+          </>
         )}
         <label className="flex flex-col gap-1 text-sm text-ink-muted">
           אימייל
           <input
             type="email"
+            autoComplete="email"
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="rounded-lg border border-border px-3 py-2 text-ink outline-none focus:border-brand"
+            className="rounded-lg border border-border bg-surface px-3 py-2 text-ink outline-none focus:border-brand"
           />
         </label>
         <label className="flex flex-col gap-1 text-sm text-ink-muted">
           סיסמה
           <input
             type="password"
+            autoComplete={mode === "signin" ? "current-password" : "new-password"}
             required
             minLength={6}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="rounded-lg border border-border px-3 py-2 text-ink outline-none focus:border-brand"
+            className="rounded-lg border border-border bg-surface px-3 py-2 text-ink outline-none focus:border-brand"
           />
         </label>
 
-        {error && <p className="text-sm text-brand-dark">{error}</p>}
+        {error && <p className="text-sm text-rose-400">{error}</p>}
 
         <button
           type="submit"

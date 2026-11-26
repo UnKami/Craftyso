@@ -82,9 +82,23 @@ export type OrderItem = {
   };
 };
 
+export type CustomerProfile = {
+  id: string;
+  uids: string[];
+  emails: string[];
+  phones: string[];
+  name?: string;
+  defaultShippingAddress?: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type Order = {
   id: string;
   userId?: string;
+  customerId?: string;
+  customerEmailNormalized?: string;
+  customerPhoneNormalized?: string;
   items: OrderItem[];
   subtotalIls?: number;
   shippingMethod?: ShippingMethod;
