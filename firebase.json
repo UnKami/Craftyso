@@ -1,18 +1,4 @@
 {
-  "apphosting": {
-    "backendId": "craftyso-staging",
-    "rootDir": "/",
-    "ignore": [
-      "node_modules",
-      ".git",
-      ".next",
-      "antigravity-hero-videos",
-      "contracts",
-      "secret",
-      "firebase-debug.log",
-      "firebase-debug.*.log"
-    ]
-  },
   "hosting": {
     "source": "."
   },
