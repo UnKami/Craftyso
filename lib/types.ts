@@ -69,6 +69,8 @@ export type ProductionStatus =
 export type OrderItem = {
   productId: string;
   variantId?: string;
+  slug?: string;
+  image?: string;
   name: string;
   priceIls: number;
   quantity: number;
@@ -80,6 +82,14 @@ export type OrderItem = {
     baseColor?: string;
     technique?: string;
   };
+};
+
+export type ShippingDetails = {
+  city: string;
+  street: string;
+  apartment?: string;
+  postalCode?: string;
+  deliveryNotes?: string;
 };
 
 export type CustomerProfile = {
@@ -112,6 +122,7 @@ export type Order = {
   customerEmail: string;
   customerPhone: string;
   shippingAddress?: string;
+  shippingDetails?: ShippingDetails;
   growTransactionId?: string;
   payplusPageRequestUid?: string;
   payplusTransactionUid?: string;

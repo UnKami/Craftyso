@@ -48,6 +48,19 @@ const SHIPPING_LABELS: Record<ShippingMethod, string> = {
   pickup: "איסוף עצמי מהבוטיק — רחוב לבינובסקי 9, תל אביב",
 };
 
+function toWhatsAppHref(phone: string): string {
+  const digits = phone.replace(/\D/g, "");
+  if (!digits) return "";
+  if (digits.startsWith("972")) return `https://wa.me/${digits}`;
+  if (digits.startsWith("0")) return `https://wa.me/972${digits.slice(1)}`;
+  return `https://wa.me/${digits}`;
+}
+
+function toMapsHref(address: string): string {
+  const cleaned = address.replace(/^איסוף עצמי\s*[—-]\s*/, "").trim();
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(cleaned)}`;
+}
+
 type FilterKey = "paid_active" | "shipped" | "all";
 
 export function FactoryPortalBoard({
@@ -103,20 +116,17 @@ export function FactoryPortalBoard({
             </h1>
           </div>
 
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() => window.print()}
-              className="rounded-xl border border-[#c59b5f]/40 bg-[#1a130f] px-4 py-2 text-xs font-semibold text-[#eed3a2] transition hover:border-[#dfb37c] hover:text-white"
-            >
-              🖨️ הדפסת רשימת הזמנות
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={() => window.print()}
+            className="rounded-xl border border-[#c59b5f]/40 bg-[#1a130f] px-4 py-2 text-xs font-semibold text-[#eed3a2] transition hover:border-[#dfb37c] hover:text-white"
+          >
+            🖨️ הדפסת רשימת הזמנות
+          </button>
         </div>
       </header>
 
       <main className="mx-auto max-w-6xl space-y-6 px-4 py-8">
-        {/* Filter Bar */}
         <div className="flex flex-wrap items-center justify-between gap-3 print:hidden">
           <div className="flex flex-wrap gap-2">
             <button
@@ -163,13 +173,12 @@ export function FactoryPortalBoard({
           />
         </div>
 
-        {/* Orders List */}
         {filtered.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-[#382a20] bg-[#140e0b]/60 p-12 text-center text-sm text-[#aa9c8d]">
             אין כרגע הזמנות להצגה בסינון זה.
           </div>
         ) : (
-          <div className="space-y-5">
+          <div className="space-y-8">
             {filtered.map((order) => (
               <PortalOrderCard key={order.id} token={token} order={order} />
             ))}
@@ -189,6 +198,9 @@ function PortalOrderCard({ token, order }: { token: string; order: Order }) {
   const prodStatus: ProductionStatus = order.productionStatus ?? "pending_production";
   const statusInfo = PROD_STATUS[prodStatus] ?? PROD_STATUS.pending_production;
   const isPaid = order.status === "paid" || order.status === "fulfilled";
+  const totalUnits = order.items.reduce((s, i) => s + i.quantity, 0);
+  const waHref = toWhatsAppHref(order.customerPhone);
+  const mapsHref = order.shippingAddress ? toMapsHref(order.shippingAddress) : "";
 
   function handleAdvance(nextStatus: ProductionStatus) {
     startTransition(async () => {
@@ -212,180 +224,285 @@ function PortalOrderCard({ token, order }: { token: string; order: Order }) {
   }
 
   return (
-    <article className="break-inside-avoid rounded-2xl border border-[#2d2118] bg-[#140e0b] p-5 shadow-lg">
-      {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#2d2118] pb-3.5">
-        <div className="flex flex-wrap items-center gap-2.5">
-          <span className="font-mono text-sm font-bold text-[#eed3a2]">
-            #{order.id.slice(0, 8)}
-          </span>
-          {isPaid ? (
-            <span className="rounded-full border border-emerald-500/40 bg-emerald-500/15 px-2.5 py-0.5 text-xs font-bold text-emerald-400">
-              ✓ שולם — מאושר לייצור
+    <article
+      className={`break-inside-avoid overflow-hidden rounded-2xl border-2 bg-[#17110d] shadow-[0_14px_40px_rgba(0,0,0,0.65)] ${
+        isPaid ? "border-[#c59b5f]/65" : "border-rose-500/45"
+      }`}
+    >
+      <div
+        className={`h-1.5 w-full ${
+          isPaid
+            ? "bg-gradient-to-l from-emerald-500 via-[#d4af37] to-[#8f5823]"
+            : "bg-gradient-to-l from-rose-500/80 to-amber-500/60"
+        }`}
+      />
+
+      <div className="space-y-5 p-5 sm:p-6">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#2d2118] pb-4">
+          <div className="flex flex-wrap items-center gap-2.5">
+            <span className="rounded-lg border border-[#c59b5f]/40 bg-[#221811] px-2.5 py-1 font-mono text-sm font-bold text-[#eed3a2]">
+              #{order.id.slice(0, 8)}
             </span>
-          ) : (
-            <span className="rounded-full border border-rose-500/40 bg-rose-500/15 px-2.5 py-0.5 text-xs font-bold text-rose-400">
-              ⚠ טרם שולם ({order.status}) — לא לייצר
+            {isPaid ? (
+              <span className="rounded-full border border-emerald-500/50 bg-emerald-500/15 px-3 py-1 text-xs font-bold text-emerald-300">
+                ✓ שולם — מאושר לייצור
+              </span>
+            ) : (
+              <span className="rounded-full border border-rose-500/50 bg-rose-500/15 px-3 py-1 text-xs font-bold text-rose-300">
+                ⚠ טרם שולם ({order.status}) — לא לייצר
+              </span>
+            )}
+            <span
+              className={`rounded-full border px-3 py-1 text-xs font-semibold ${statusInfo.badge}`}
+            >
+              {statusInfo.label}
             </span>
-          )}
-          <span
-            className={`rounded-full border px-2.5 py-0.5 text-xs font-semibold ${statusInfo.badge}`}
-          >
-            {statusInfo.label}
-          </span>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-[#aa9c8d]">
+              {new Date(order.createdAt).toLocaleString("he-IL", {
+                day: "2-digit",
+                month: "2-digit",
+                year: "2-digit",
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
+            </span>
+            {statusInfo.next && isPaid && (
+              <button
+                type="button"
+                disabled={pending}
+                onClick={() => handleAdvance(statusInfo.next!)}
+                className="rounded-xl bg-[#b8864b] px-4 py-2 text-xs font-bold text-white transition hover:bg-[#c99a65] disabled:opacity-50 print:hidden"
+              >
+                {statusInfo.nextLabel}
+              </button>
+            )}
+          </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          <span className="text-xs text-[#8a7b6b]">
-            {new Date(order.createdAt).toLocaleString("he-IL", {
-              day: "2-digit",
-              month: "2-digit",
-              year: "2-digit",
-              hour: "2-digit",
-              minute: "2-digit",
-            })}
-          </span>
-          {statusInfo.next && isPaid && (
-            <button
-              type="button"
-              disabled={pending}
-              onClick={() => handleAdvance(statusInfo.next!)}
-              className="rounded-lg bg-[#8f5823] px-3.5 py-1.5 text-xs font-semibold text-white transition hover:bg-[#ad7c44] disabled:opacity-50 print:hidden"
-            >
-              {statusInfo.nextLabel}
-            </button>
-          )}
-        </div>
-      </div>
+        {/* Clickable Customer + Shipping + Payment Details */}
+        <div className="grid gap-3.5 text-xs md:grid-cols-3">
+          <div className="rounded-xl border border-[#2d2118] bg-[#110c09] p-4 space-y-1.5">
+            <span className="block text-[11px] font-bold uppercase tracking-wider text-[#c59b5f]">
+              פרטי לקוח
+            </span>
+            <p className="text-sm font-bold text-[#fbf8f2]">{order.customerName}</p>
+            <div className="flex flex-wrap items-center gap-2 pt-0.5">
+              <a
+                href={`tel:${order.customerPhone}`}
+                dir="ltr"
+                className="inline-flex items-center gap-1 rounded-lg border border-[#c59b5f]/35 bg-[#1c140f] px-2.5 py-1 font-medium text-[#eed3a2] hover:border-[#dfb37c] hover:text-white"
+              >
+                📞 {order.customerPhone}
+              </a>
+              {waHref && (
+                <a
+                  href={waHref}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1 rounded-lg border border-emerald-500/35 bg-emerald-500/10 px-2.5 py-1 font-medium text-emerald-300 hover:bg-emerald-500/20"
+                >
+                  💬 WhatsApp
+                </a>
+              )}
+            </div>
+            <div>
+              <a
+                href={`mailto:${order.customerEmail}`}
+                dir="ltr"
+                className="inline-flex items-center gap-1 text-[#dfb37c] underline decoration-[#c59b5f]/40 underline-offset-2 hover:text-white"
+              >
+                ✉️ {order.customerEmail}
+              </a>
+            </div>
+          </div>
 
-      {/* Customer + Shipping + Payment Details */}
-      <div className="mt-4 grid gap-3 rounded-xl border border-[#241a13] bg-[#1a130f] p-4 text-xs sm:grid-cols-3">
-        <div className="space-y-1">
-          <span className="block font-semibold text-[#c59b5f]">פרטי לקוח</span>
-          <p className="text-sm font-bold text-[#fbf8f2]">{order.customerName}</p>
-          <a href={`tel:${order.customerPhone}`} className="block text-[#eed3a2] hover:underline">
-            📞 {order.customerPhone}
-          </a>
-          <p className="text-[#aa9c8d]">{order.customerEmail}</p>
+          <div className="rounded-xl border border-[#2d2118] bg-[#110c09] p-4 space-y-1.5">
+            <span className="block text-[11px] font-bold uppercase tracking-wider text-[#c59b5f]">
+              פרטי משלוח וכתובת
+            </span>
+            <p className="font-semibold text-[#fbf8f2]">
+              {order.shippingMethod ? SHIPPING_LABELS[order.shippingMethod] : "שליח עד הבית"}
+            </p>
+            {order.shippingAddress && (
+              <a
+                href={mapsHref}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-start gap-1.5 rounded-lg border border-[#c59b5f]/35 bg-[#1c140f] px-2.5 py-1.5 text-[#eed3a2] hover:border-[#dfb37c] hover:text-white"
+              >
+                <span>📍</span>
+                <span className="underline decoration-[#c59b5f]/40 underline-offset-2">
+                  {order.shippingAddress}
+                </span>
+              </a>
+            )}
+            {order.shippingDetails?.deliveryNotes && (
+              <p className="text-amber-300">
+                הערות לשליח: {order.shippingDetails.deliveryNotes}
+              </p>
+            )}
+            {order.trackingNumber && (
+              <p className="font-mono font-semibold text-emerald-400">
+                מס׳ מעקב: {order.trackingNumber}
+              </p>
+            )}
+          </div>
+
+          <div className="rounded-xl border border-[#2d2118] bg-[#110c09] p-4 space-y-1.5">
+            <span className="block text-[11px] font-bold uppercase tracking-wider text-[#c59b5f]">
+              תשלום וסיכום
+            </span>
+            <p className="text-lg font-bold text-gold-gradient">{formatIls(order.totalIls)}</p>
+            <p className="text-[#aa9c8d]">{totalUnits} יח&apos; סה&quot;כ</p>
+            {order.payplusApprovalNum && (
+              <p className="font-mono text-[#c7b9a8]">אישור PayPlus: {order.payplusApprovalNum}</p>
+            )}
+          </div>
         </div>
 
-        <div className="space-y-1">
-          <span className="block font-semibold text-[#c59b5f]">פרטי משלוח</span>
-          <p className="font-semibold text-[#fbf8f2]">
-            {order.shippingMethod ? SHIPPING_LABELS[order.shippingMethod] : "שליח עד הבית"}
-          </p>
-          {order.shippingAddress && <p className="text-[#c7b9a8]">{order.shippingAddress}</p>}
-          {order.trackingNumber && (
-            <p className="font-mono text-emerald-400">מס׳ מעקב: {order.trackingNumber}</p>
-          )}
-        </div>
-
-        <div className="space-y-1">
-          <span className="block font-semibold text-[#c59b5f]">תשלום וסיכום</span>
-          <p className="text-base font-bold text-gold-gradient">{formatIls(order.totalIls)}</p>
-          {order.payplusApprovalNum && (
-            <p className="font-mono text-[#aa9c8d]">אישור PayPlus: {order.payplusApprovalNum}</p>
-          )}
-          {order.payplusVoucherNum && (
-            <p className="font-mono text-[#aa9c8d]">שובר: {order.payplusVoucherNum}</p>
-          )}
-        </div>
-      </div>
-
-      {/* Itemized Products */}
-      <div className="mt-4 space-y-2.5">
-        <h3 className="text-xs font-semibold uppercase tracking-wider text-[#aa9c8d]">
-          פריטים בהזמנה ({order.items.reduce((s, i) => s + i.quantity, 0)} יח&apos;)
-        </h3>
-        <div className="divide-y divide-[#241a13] rounded-xl border border-[#241a13] bg-[#120c08]">
-          {order.items.map((item, idx) => (
-            <div
-              key={`${item.productId}-${idx}`}
-              className="flex flex-wrap items-center justify-between gap-4 p-3.5 text-sm"
-            >
-              <div className="flex items-start gap-3">
-                {item.customArtworkUrl && (
-                  <div className="flex flex-col items-center gap-1.5">
-                    <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-lg border border-[#c59b5f]/50 bg-[#1a130f] p-1">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={item.customArtworkUrl}
-                        alt="קובץ גרפיקה"
-                        className="max-h-full max-w-full object-contain"
-                      />
-                    </div>
-                    <a
-                      href={item.customArtworkUrl}
-                      download={`artwork-${order.id.slice(0, 6)}-${idx + 1}.png`}
-                      className="text-[11px] font-semibold text-[#eed3a2] underline hover:text-white print:hidden"
-                    >
-                      ⬇ הורד גרפיקה
-                    </a>
+        {/* Itemized Spec Sheets */}
+        <div className="space-y-3">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-[#eed3a2]">
+            פריטים בהזמנה ({totalUnits} יח&apos;)
+          </h3>
+          <div className="space-y-3">
+            {order.items.map((item, idx) => (
+              <div
+                key={`${item.productId}-${idx}`}
+                className="rounded-xl border border-[#3a2a1e] bg-[#110c09] p-4"
+              >
+                <div className="flex flex-wrap items-start justify-between gap-3 border-b border-[#241a13] pb-3">
+                  <div>
+                    <p className="text-base font-bold text-[#fbf8f2]">{item.name}</p>
+                    <p className="mt-0.5 text-xs text-[#aa9c8d]">
+                      {formatIls(item.priceIls)} ליח&apos; · סה&quot;כ{" "}
+                      <strong className="text-[#eed3a2]">
+                        {formatIls(item.priceIls * item.quantity)}
+                      </strong>
+                    </p>
                   </div>
-                )}
+                  <div className="flex items-center gap-2">
+                    <span className="rounded-lg border border-[#c59b5f]/50 bg-[#241910] px-3.5 py-1.5 text-sm font-extrabold text-[#eed3a2]">
+                      כמות: {item.quantity} יח&apos;
+                    </span>
+                    {item.customArtworkUrl && (
+                      <a
+                        href={item.customArtworkUrl}
+                        download={`artwork-${order.id.slice(0, 6)}-${idx + 1}.png`}
+                        className="rounded-lg bg-[#8f5823] px-3.5 py-1.5 text-xs font-bold text-white transition hover:bg-[#ad7c44] print:hidden"
+                      >
+                        ⬇ הורד גרפיקה מקורית
+                      </a>
+                    )}
+                  </div>
+                </div>
 
-                <div>
-                  <p className="font-semibold text-[#fbf8f2]">{item.name}</p>
-                  {item.customSpecs && (
-                    <div className="mt-1 flex flex-wrap gap-1.5 text-[11px] text-[#eed3a2]">
-                      {item.customSpecs.technique && (
-                        <span className="rounded border border-[#c59b5f]/40 bg-[#1e1510] px-2 py-0.5">
-                          {item.customSpecs.technique}
-                        </span>
-                      )}
-                      {item.customSpecs.widthCm && item.customSpecs.heightCm && (
-                        <span className="rounded border border-[#c59b5f]/40 bg-[#1e1510] px-2 py-0.5">
-                          {item.customSpecs.widthCm}×{item.customSpecs.heightCm} ס&quot;מ
-                        </span>
-                      )}
-                      {item.customSpecs.baseColor && (
-                        <span className="rounded border border-[#c59b5f]/40 bg-[#1e1510] px-2 py-0.5">
-                          בסיס: {item.customSpecs.baseColor}
-                        </span>
-                      )}
+                <div className="mt-3.5 grid gap-4 sm:grid-cols-12">
+                  {item.image && (
+                    <div className="sm:col-span-3">
+                      <span className="mb-1.5 block text-[11px] font-semibold text-[#aa9c8d]">
+                        תמונת הפריט המבוקש:
+                      </span>
+                      <div className="flex h-36 items-center justify-center overflow-hidden rounded-xl border border-[#2d2118] bg-[#1c140f] p-2">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={item.image}
+                          alt={item.name}
+                          className="max-h-full max-w-full rounded object-contain"
+                        />
+                      </div>
                     </div>
                   )}
-                  {item.customNotes && (
-                    <p className="mt-1 text-xs text-amber-300">הערת לקוח: {item.customNotes}</p>
+
+                  {item.customArtworkUrl && (
+                    <div className={item.image ? "sm:col-span-5" : "sm:col-span-7"}>
+                      <span className="mb-1.5 block text-[11px] font-semibold text-[#eed3a2]">
+                        קובץ גרפיקה לרקמה / הדפסה:
+                      </span>
+                      <div className="flex h-36 items-center justify-center overflow-hidden rounded-xl border-2 border-[#c59b5f]/40 bg-white p-3">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={item.customArtworkUrl}
+                          alt="קובץ גרפיקה"
+                          className="max-h-full max-w-full object-contain"
+                        />
+                      </div>
+                    </div>
                   )}
+
+                  <div
+                    className={`flex flex-col justify-center gap-2 ${
+                      item.image && item.customArtworkUrl
+                        ? "sm:col-span-4"
+                        : item.image || item.customArtworkUrl
+                          ? "sm:col-span-5"
+                          : "sm:col-span-12"
+                    }`}
+                  >
+                    {item.customSpecs && (
+                      <div className="grid grid-cols-1 gap-2 rounded-xl border border-[#2d2118] bg-[#1a130f] p-3 text-xs">
+                        {item.customSpecs.technique && (
+                          <div className="flex justify-between gap-2">
+                            <span className="text-[#aa9c8d]">טכניקה:</span>
+                            <strong className="text-[#fbf8f2]">{item.customSpecs.technique}</strong>
+                          </div>
+                        )}
+                        {item.customSpecs.widthCm && item.customSpecs.heightCm && (
+                          <div className="flex justify-between gap-2">
+                            <span className="text-[#aa9c8d]">מידות:</span>
+                            <strong className="text-[#fbf8f2]">
+                              {item.customSpecs.widthCm}×{item.customSpecs.heightCm} ס&quot;מ
+                            </strong>
+                          </div>
+                        )}
+                        {item.customSpecs.baseColor && (
+                          <div className="flex justify-between gap-2">
+                            <span className="text-[#aa9c8d]">צבע בסיס:</span>
+                            <strong className="text-[#fbf8f2]">{item.customSpecs.baseColor}</strong>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    {item.customNotes && (
+                      <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-3 text-xs text-amber-200">
+                        <strong className="block text-amber-300">הערת לקוח:</strong>
+                        {item.customNotes}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
-
-              <div className="text-left">
-                <span className="inline-block rounded-lg border border-[#c59b5f]/40 bg-[#1e1510] px-3 py-1 text-sm font-bold text-[#eed3a2]">
-                  כמות: {item.quantity}
-                </span>
-                <p className="mt-1 text-xs text-[#8a7b6b]">
-                  {formatIls(item.priceIls)} ליח&apos; • סה&quot;כ {formatIls(item.priceIls * item.quantity)}
-                </p>
-              </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
-      </div>
 
-      {/* Factory Tracking & Notes Controls */}
-      <div className="mt-4 grid gap-3 border-t border-[#2d2118] pt-4 sm:grid-cols-12 print:hidden">
-        <input
-          value={tracking}
-          onChange={(e) => setTracking(e.target.value)}
-          placeholder="מספר מעקב משלוח (שמירה תסמן כנשלח)"
-          className="rounded-xl border border-[#2d2118] bg-[#1a130f] px-3.5 py-2 text-xs text-[#f3ede2] placeholder-[#7d6f60] outline-none focus:border-[#dfb37c] sm:col-span-4"
-        />
-        <input
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-          placeholder="הערות מפעל / אריזה פנימיות..."
-          className="rounded-xl border border-[#2d2118] bg-[#1a130f] px-3.5 py-2 text-xs text-[#f3ede2] placeholder-[#7d6f60] outline-none focus:border-[#dfb37c] sm:col-span-6"
-        />
-        <button
-          type="button"
-          disabled={pending}
-          onClick={handleSave}
-          className="rounded-xl border border-[#c59b5f]/50 bg-[#1e1510] px-4 py-2 text-xs font-semibold text-[#eed3a2] transition hover:border-[#dfb37c] hover:text-white disabled:opacity-50 sm:col-span-2"
-        >
-          {saved ? "✓ נשמר" : pending ? "שומר..." : "שמור פרטים"}
-        </button>
+        {/* Factory Tracking & Notes Controls */}
+        <div className="grid gap-3 border-t border-[#2d2118] pt-4 sm:grid-cols-12 print:hidden">
+          <input
+            value={tracking}
+            onChange={(e) => setTracking(e.target.value)}
+            dir="ltr"
+            placeholder="מספר מעקב משלוח (שמירה תסמן כנשלח)"
+            className="rounded-xl border border-[#3a2a1e] bg-[#110c09] px-3.5 py-2 text-left font-mono text-xs text-[#f3ede2] placeholder-[#7d6f60] outline-none focus:border-[#dfb37c] sm:col-span-4"
+          />
+          <input
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder="הערות מפעל / אריזה פנימיות..."
+            className="rounded-xl border border-[#3a2a1e] bg-[#110c09] px-3.5 py-2 text-xs text-[#f3ede2] placeholder-[#7d6f60] outline-none focus:border-[#dfb37c] sm:col-span-6"
+          />
+          <button
+            type="button"
+            disabled={pending}
+            onClick={handleSave}
+            className="rounded-xl border border-[#c59b5f]/50 bg-[#241910] px-4 py-2 text-xs font-bold text-[#eed3a2] transition hover:border-[#dfb37c] hover:text-white disabled:opacity-50 sm:col-span-2"
+          >
+            {saved ? "✓ נשמר" : pending ? "שומר..." : "שמור פרטים"}
+          </button>
+        </div>
       </div>
     </article>
   );

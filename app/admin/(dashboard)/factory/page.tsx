@@ -98,7 +98,7 @@ export default async function FactoryDashboardPage() {
             </p>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-8">
             {orders.map((order) => (
               <FactoryOrderCard key={order.id} order={order} />
             ))}

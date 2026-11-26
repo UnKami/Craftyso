@@ -39,7 +39,16 @@ function CheckoutContent() {
   const idPrefix = useId();
 
   const [shippingMethod, setShippingMethod] = useState<ShippingMethod>("courier");
-  const [form, setForm] = useState({ name: "", email: "", phone: "", address: "" });
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    city: "",
+    street: "",
+    apartment: "",
+    postalCode: "",
+    deliveryNotes: "",
+  });
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
@@ -55,9 +64,6 @@ function CheckoutContent() {
           : COURIER_PRICE_ILS;
   const grandTotalIls = Math.round((subtotalIls + shippingCostIls) * 100) / 100;
 
-  // Synchronize aria-invalid & aria-describedby with native :user-invalid state
-  // (per accessible-error-announcement guidance) so screen readers only hear
-  // errors after user interaction, never prematurely on page load.
   useEffect(() => {
     const formEl = formRef.current;
     const announcer = announcerRef.current;
@@ -157,9 +163,22 @@ function CheckoutContent() {
     setStatus("loading");
     setError(null);
 
+    const shippingDetails =
+      shippingMethod === "pickup"
+        ? undefined
+        : {
+            city: form.city.trim(),
+            street: form.street.trim(),
+            apartment: form.apartment.trim() || undefined,
+            postalCode: form.postalCode.trim() || undefined,
+            deliveryNotes: form.deliveryNotes.trim() || undefined,
+          };
+
     const result = await placeOrder({
       items: lines.map((l) => ({
         productId: l.productId,
+        slug: l.slug,
+        image: l.image,
         name: l.name,
         priceIls: l.priceIls,
         quantity: l.quantity,
@@ -171,12 +190,10 @@ function CheckoutContent() {
       customerEmail: form.email,
       customerPhone: form.phone,
       shippingMethod,
-      shippingAddress: shippingMethod === "pickup" ? undefined : form.address,
+      shippingDetails,
     });
 
     if (result.ok) {
-      // Redirect to PayPlus hosted checkout page. Do NOT clear the cart here —
-      // cart is cleared on /checkout/success so cancelled payments keep items.
       window.location.assign(result.paymentUrl);
       return;
     }
@@ -209,7 +226,11 @@ function CheckoutContent() {
   const nameId = `${idPrefix}-name`;
   const emailId = `${idPrefix}-email`;
   const phoneId = `${idPrefix}-phone`;
-  const addressId = `${idPrefix}-address`;
+  const cityId = `${idPrefix}-city`;
+  const streetId = `${idPrefix}-street`;
+  const apartmentId = `${idPrefix}-apt`;
+  const postalId = `${idPrefix}-postal`;
+  const notesId = `${idPrefix}-notes`;
   const termsId = `${idPrefix}-terms`;
 
   return (
@@ -320,10 +341,10 @@ function CheckoutContent() {
             </div>
           </section>
 
-          {/* Shipping Method Selection */}
+          {/* Shipping Method & Structured Address */}
           <section className="rounded-2xl border border-[#2d2118] bg-[#140e0b] p-5 sm:p-6">
             <h2 className="font-serif-hebrew mb-4 text-lg font-bold text-[#eed3a2]">
-              2. שיטת משלוח
+              2. שיטת משלוח וכתובת אספקה
             </h2>
             <div className="flex flex-col gap-3" role="radiogroup" aria-label="בחירת שיטת משלוח">
               <label className="flex cursor-pointer items-start justify-between gap-3 rounded-xl border border-[#2d2118] bg-[#1a130f]/80 p-4 transition has-[:checked]:border-[#dfb37c] has-[:checked]:bg-[#221811]">
@@ -398,27 +419,100 @@ function CheckoutContent() {
             </div>
 
             {shippingMethod !== "pickup" && (
-              <div className="mt-4 flex flex-col gap-1.5">
-                <label htmlFor={addressId} className="text-sm text-[#aa9c8d]">
-                  כתובת מלאה למשלוח (עיר, רחוב, מספר בית, דירה/קומה) <span className="text-[#c59b5f]">*</span>
-                </label>
-                <textarea
-                  id={addressId}
-                  name="address"
-                  rows={2}
-                  autoComplete="street-address"
-                  required
-                  minLength={5}
-                  placeholder="לדוגמה: תל אביב, דיזנגוף 100, דירה 4"
-                  value={form.address}
-                  onChange={(e) => setForm({ ...form, address: e.target.value })}
-                  data-error={`${addressId}-error`}
-                  aria-invalid="false"
-                  className="atelier-field resize-y rounded-xl border border-[#c59b5f]/40 bg-[#1a130f] px-4 py-2.5 text-sm text-[#f3ede2] placeholder-[#7d6f60] outline-none transition focus:border-[#dfb37c] focus:ring-1 focus:ring-[#dfb37c]"
-                />
-                <span id={`${addressId}-error`} className="atelier-field-error">
-                  יש להזין כתובת מלאה למשלוח (עיר, רחוב ומספר בית).
-                </span>
+              <div className="mt-5 grid gap-4 border-t border-[#241a13] pt-5 sm:grid-cols-2">
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor={cityId} className="text-sm text-[#aa9c8d]">
+                    עיר / יישוב <span className="text-[#c59b5f]">*</span>
+                  </label>
+                  <input
+                    id={cityId}
+                    name="city"
+                    type="text"
+                    autoComplete="address-level2"
+                    required
+                    minLength={2}
+                    placeholder="לדוגמה: תל אביב"
+                    value={form.city}
+                    onChange={(e) => setForm({ ...form, city: e.target.value })}
+                    data-error={`${cityId}-error`}
+                    aria-invalid="false"
+                    className="atelier-field rounded-xl border border-[#c59b5f]/40 bg-[#1a130f] px-4 py-2.5 text-sm text-[#f3ede2] placeholder-[#7d6f60] outline-none transition focus:border-[#dfb37c] focus:ring-1 focus:ring-[#dfb37c]"
+                  />
+                  <span id={`${cityId}-error`} className="atelier-field-error">
+                    יש להזין שם עיר או יישוב.
+                  </span>
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor={streetId} className="text-sm text-[#aa9c8d]">
+                    רחוב ומספר בית <span className="text-[#c59b5f]">*</span>
+                  </label>
+                  <input
+                    id={streetId}
+                    name="street"
+                    type="text"
+                    autoComplete="address-line1"
+                    required
+                    minLength={3}
+                    placeholder="לדוגמה: דיזנגוף 100"
+                    value={form.street}
+                    onChange={(e) => setForm({ ...form, street: e.target.value })}
+                    data-error={`${streetId}-error`}
+                    aria-invalid="false"
+                    className="atelier-field rounded-xl border border-[#c59b5f]/40 bg-[#1a130f] px-4 py-2.5 text-sm text-[#f3ede2] placeholder-[#7d6f60] outline-none transition focus:border-[#dfb37c] focus:ring-1 focus:ring-[#dfb37c]"
+                  />
+                  <span id={`${streetId}-error`} className="atelier-field-error">
+                    יש להזין שם רחוב ומספר בית.
+                  </span>
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor={apartmentId} className="text-sm text-[#aa9c8d]">
+                    דירה / קומה / כניסה (אופציונלי)
+                  </label>
+                  <input
+                    id={apartmentId}
+                    name="apartment"
+                    type="text"
+                    autoComplete="address-line2"
+                    placeholder="לדוגמה: קומה 2, דירה 4"
+                    value={form.apartment}
+                    onChange={(e) => setForm({ ...form, apartment: e.target.value })}
+                    className="rounded-xl border border-[#c59b5f]/40 bg-[#1a130f] px-4 py-2.5 text-sm text-[#f3ede2] placeholder-[#7d6f60] outline-none transition focus:border-[#dfb37c] focus:ring-1 focus:ring-[#dfb37c]"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor={postalId} className="text-sm text-[#aa9c8d]">
+                    מיקוד (אופציונלי)
+                  </label>
+                  <input
+                    id={postalId}
+                    name="postalCode"
+                    type="text"
+                    inputMode="numeric"
+                    autoComplete="postal-code"
+                    placeholder="לדוגמה: 6433222"
+                    value={form.postalCode}
+                    onChange={(e) => setForm({ ...form, postalCode: e.target.value })}
+                    className="rounded-xl border border-[#c59b5f]/40 bg-[#1a130f] px-4 py-2.5 text-sm text-[#f3ede2] placeholder-[#7d6f60] outline-none transition focus:border-[#dfb37c] focus:ring-1 focus:ring-[#dfb37c]"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1.5 sm:col-span-2">
+                  <label htmlFor={notesId} className="text-sm text-[#aa9c8d]">
+                    הערות לשליח (קוד כניסה, שעות נוחות וכו&apos;)
+                  </label>
+                  <input
+                    id={notesId}
+                    name="deliveryNotes"
+                    type="text"
+                    placeholder="לדוגמה: קוד כניסה 1234, להשאיר ליד הדלת"
+                    value={form.deliveryNotes}
+                    onChange={(e) => setForm({ ...form, deliveryNotes: e.target.value })}
+                    className="rounded-xl border border-[#c59b5f]/40 bg-[#1a130f] px-4 py-2.5 text-sm text-[#f3ede2] placeholder-[#7d6f60] outline-none transition focus:border-[#dfb37c] focus:ring-1 focus:ring-[#dfb37c]"
+                  />
+                </div>
               </div>
             )}
           </section>

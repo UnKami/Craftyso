@@ -17,7 +17,7 @@ import {
   createPayPlusPaymentLink,
   PayPlusNotConfiguredError,
 } from "@/lib/payplus/client";
-import type { Order, OrderItem, Product, ShippingMethod } from "@/lib/types";
+import type { Order, OrderItem, Product, ShippingDetails, ShippingMethod } from "@/lib/types";
 
 type PlaceOrderInput = {
   items: OrderItem[];
@@ -26,6 +26,7 @@ type PlaceOrderInput = {
   customerPhone: string;
   shippingMethod: ShippingMethod;
   shippingAddress?: string;
+  shippingDetails?: ShippingDetails;
 };
 
 export type PlaceOrderResult =
@@ -57,6 +58,19 @@ async function resolveSiteUrl(): Promise<string> {
   return "https://craftyso.co.il";
 }
 
+function formatShippingAddress(details?: ShippingDetails, fallback?: string): string {
+  if (details && (details.city.trim() || details.street.trim())) {
+    const parts = [
+      details.street.trim(),
+      details.apartment?.trim() ? `דירה/קומה: ${details.apartment.trim()}` : "",
+      details.city.trim(),
+      details.postalCode?.trim() ? `מיקוד ${details.postalCode.trim()}` : "",
+    ].filter(Boolean);
+    return parts.join(", ");
+  }
+  return fallback?.trim() ?? "";
+}
+
 // Re-derive price and quantity from Firestore instead of trusting the
 // client — a modified cart line should never be able to set its own price.
 // Custom/bespoke items (from the customizer) use a synthetic productId with
@@ -79,6 +93,8 @@ async function repriceItem(item: OrderItem): Promise<OrderItem> {
     ...item,
     quantity,
     name: product.name,
+    slug: product.slug,
+    image: item.image || product.images[0],
     priceIls: wholesaleActive ? product.wholesalePriceIls! : product.priceIls,
   };
 }
@@ -89,14 +105,14 @@ export async function placeOrder(input: PlaceOrderInput): Promise<PlaceOrderResu
   const customerName = input.customerName.trim();
   const customerEmail = input.customerEmail.trim();
   const customerPhone = input.customerPhone.trim();
-  const shippingAddress = input.shippingAddress?.trim() ?? "";
+  const shippingAddress = formatShippingAddress(input.shippingDetails, input.shippingAddress);
 
   if (!customerName || !customerEmail || !customerPhone) {
     return { ok: false, error: "יש למלא שם מלא, אימייל וטלפון." };
   }
 
   if (input.shippingMethod !== "pickup" && !shippingAddress) {
-    return { ok: false, error: "יש להזין כתובת מלאה למשלוח." };
+    return { ok: false, error: "יש להזין עיר ורחוב מלאים למשלוח." };
   }
 
   const items = await Promise.all(input.items.map(repriceItem));
@@ -111,6 +127,23 @@ export async function placeOrder(input: PlaceOrderInput): Promise<PlaceOrderResu
     input.shippingMethod === "pickup"
       ? "איסוף עצמי — רחוב לבינובסקי 9, תל אביב"
       : shippingAddress;
+
+  const cleanedDetails: ShippingDetails | undefined =
+    input.shippingMethod !== "pickup" && input.shippingDetails
+      ? {
+          city: input.shippingDetails.city.trim(),
+          street: input.shippingDetails.street.trim(),
+          ...(input.shippingDetails.apartment?.trim()
+            ? { apartment: input.shippingDetails.apartment.trim() }
+            : {}),
+          ...(input.shippingDetails.postalCode?.trim()
+            ? { postalCode: input.shippingDetails.postalCode.trim() }
+            : {}),
+          ...(input.shippingDetails.deliveryNotes?.trim()
+            ? { deliveryNotes: input.shippingDetails.deliveryNotes.trim() }
+            : {}),
+        }
+      : undefined;
 
   // Aggregate customer identity by UID, email, and phone so past & future
   // orders stay linked even if the customer checks out as a guest or switches
@@ -142,6 +175,7 @@ export async function placeOrder(input: PlaceOrderInput): Promise<PlaceOrderResu
     customerEmail,
     customerPhone,
     shippingAddress: resolvedAddress,
+    ...(cleanedDetails ? { shippingDetails: cleanedDetails } : {}),
     createdAt: now,
     updatedAt: now,
   };
