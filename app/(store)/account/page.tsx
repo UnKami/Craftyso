@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getSessionUser } from "@/lib/auth/session";
 import {
-  getOrdersForCustomerProfile,
+  syncCustomerProfileWithOrders,
   upsertAndMergeCustomerIdentity,
 } from "@/lib/customers/identity";
 import { formatIls } from "@/lib/format";
@@ -46,15 +46,21 @@ export default async function AccountPage() {
   const user = await getSessionUser();
   if (!user) redirect("/account/login?next=/account");
 
-  const profile = await upsertAndMergeCustomerIdentity({
+  const initialProfile = await upsertAndMergeCustomerIdentity({
     uid: user.uid,
     email: user.email || null,
     phone: user.phone || null,
   }).catch(() => null);
 
-  const orders: Order[] = profile
-    ? await getOrdersForCustomerProfile(profile).catch(() => [])
-    : [];
+  const synced = initialProfile
+    ? await syncCustomerProfileWithOrders(initialProfile).catch(() => ({
+        profile: initialProfile,
+        orders: [] as Order[],
+      }))
+    : { profile: null, orders: [] as Order[] };
+
+  const profile = synced.profile;
+  const orders: Order[] = synced.orders;
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-12">
@@ -68,7 +74,9 @@ export default async function AccountPage() {
           </h1>
           <p className="mt-1 text-sm text-[#aa9c8d]">
             {profile?.name ? `${profile.name} · ` : ""}
-            {user.email || user.phone}
+            <span dir="ltr" className="inline-block">
+              {user.email || user.phone}
+            </span>
           </p>
         </div>
         <LogoutButton />
