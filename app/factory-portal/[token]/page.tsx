@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { adminDb } from "@/lib/firebase/admin";
 import { verifyFactoryPortalToken } from "@/lib/factory-portal/token";
+import { enrichOrdersWithItemImages } from "@/lib/orders/enrich-items";
 import { FactoryPortalBoard } from "@/components/factory/FactoryPortalBoard";
 import type { Order } from "@/lib/types";
 
@@ -25,7 +26,8 @@ export default async function FactoryPortalPage({ params }: Props) {
   let orders: Order[] = [];
   try {
     const snap = await adminDb.collection("orders").orderBy("createdAt", "desc").get();
-    orders = snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<Order, "id">) }));
+    const rawOrders = snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<Order, "id">) }));
+    orders = await enrichOrdersWithItemImages(rawOrders);
   } catch (err) {
     console.warn("[factory-portal] Failed to load orders:", err);
   }
