@@ -54,6 +54,16 @@ export function isPayPlusConfigured(): boolean {
 }
 
 /**
+ * Tags every PayPlus payment with the "SO-" project prefix while respecting
+ * PayPlus's 19-character cap on `more_info`.
+ */
+export function formatPayPlusMoreInfo(orderId: string): string {
+  const trimmed = orderId.trim();
+  const tagged = trimmed.startsWith("SO-") ? trimmed : `SO-${trimmed}`;
+  return tagged.slice(0, 19);
+}
+
+/**
  * Generates a hosted PayPlus Israel payment page URL (v1.0 REST API).
  * Supports credit cards, Bit, Apple Pay, and Google Pay as enabled on the
  * merchant's PayPlus terminal.
@@ -80,7 +90,8 @@ export async function createPayPlusPaymentLink(
     refURL_cancel: input.cancelUrl,
     refURL_callback: input.callbackUrl,
     send_failure_callback: true,
-    more_info: input.orderId,
+    more_info: formatPayPlusMoreInfo(input.orderId),
+    more_info_1: input.orderId,
     customer: {
       customer_name: input.customerName,
       email: input.customerEmail,
