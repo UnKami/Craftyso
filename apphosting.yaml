@@ -40,3 +40,24 @@ env:
     availability:
       - BUILD
       - RUNTIME
+  - variable: NEXT_PUBLIC_SITE_URL
+    value: https://craftyso.co.il
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: PAYPLUS_ENV
+    value: production
+    availability:
+      - RUNTIME
+  - variable: PAYPLUS_API_KEY
+    secret: PAYPLUS_API_KEY
+    availability:
+      - RUNTIME
+  - variable: PAYPLUS_SECRET_KEY
+    secret: PAYPLUS_SECRET_KEY
+    availability:
+      - RUNTIME
+  - variable: PAYPLUS_PAYMENT_PAGE_UID
+    secret: PAYPLUS_PAYMENT_PAGE_UID
+    availability:
+      - RUNTIME

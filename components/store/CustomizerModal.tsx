@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, type ChangeEvent } from "react";
+import { useEffect, useId, useState, useRef, type ChangeEvent } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { formatIls } from "@/lib/format";
@@ -26,7 +26,9 @@ type Props = {
 export function CustomizerModal({ item, onClose }: Props) {
   const router = useRouter();
   const { addItem } = useCart();
+  const dialogRef = useRef<HTMLDialogElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const titleId = useId();
 
   const [artworkUrl, setArtworkUrl] = useState<string | null>(null);
   const [artworkName, setArtworkName] = useState<string>("");
@@ -39,6 +41,49 @@ export function CustomizerModal({ item, onClose }: Props) {
   const [notes, setNotes] = useState<string>("");
   const [viewMode, setViewMode] = useState<"overlay" | "side-by-side">("overlay");
   const [added, setAdded] = useState(false);
+  const [validationError, setValidationError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+
+    if (item && !dialog.open) {
+      dialog.showModal();
+    } else if (!item && dialog.open) {
+      dialog.close();
+    }
+
+    const handleClose = () => {
+      if (item) onClose();
+    };
+    dialog.addEventListener("close", handleClose);
+
+    // Mandatory fallback for browsers without native <dialog closedby="any"> (e.g. Safari)
+    const handleBackdropClick = (event: MouseEvent) => {
+      if (event.target !== dialog) return;
+      const rect = dialog.getBoundingClientRect();
+      const insideDialog =
+        rect.top <= event.clientY &&
+        event.clientY <= rect.top + rect.height &&
+        rect.left <= event.clientX &&
+        event.clientX <= rect.left + rect.width;
+      if (!insideDialog) dialog.close();
+    };
+
+    const needsFallback =
+      typeof HTMLDialogElement !== "undefined" &&
+      !("closedBy" in HTMLDialogElement.prototype);
+    if (needsFallback) {
+      dialog.addEventListener("click", handleBackdropClick);
+    }
+
+    return () => {
+      dialog.removeEventListener("close", handleClose);
+      if (needsFallback) {
+        dialog.removeEventListener("click", handleBackdropClick);
+      }
+    };
+  }, [item, onClose]);
 
   if (!item) return null;
 
@@ -52,6 +97,7 @@ export function CustomizerModal({ item, onClose }: Props) {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    setValidationError(null);
     setArtworkName(file.name);
     const reader = new FileReader();
     reader.onload = () => {
@@ -65,7 +111,8 @@ export function CustomizerModal({ item, onClose }: Props) {
   function handleAddToCart() {
     if (!item) return;
     if (!artworkUrl) {
-      alert("אנא העלו קובץ גרפי או לוגו לפני ההוספה לסל.");
+      setValidationError("אנא העלו קובץ גרפי או לוגו לפני ההוספה לסל.");
+      fileInputRef.current?.focus();
       return;
     }
 
@@ -90,26 +137,33 @@ export function CustomizerModal({ item, onClose }: Props) {
 
     setAdded(true);
     setTimeout(() => {
-      onClose();
+      dialogRef.current?.close();
       router.push("/cart");
     }, 800);
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-3 backdrop-blur-md sm:p-6 overflow-y-auto">
-      <div className="relative flex max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border-2 border-[#c59b5f]/60 bg-[#120c08] shadow-[0_25px_70px_rgba(0,0,0,0.9)] text-right">
+    <dialog
+      ref={dialogRef}
+      {...({ closedby: "any" } as Record<string, string>)}
+      aria-labelledby={titleId}
+      className="m-auto max-h-[92vh] w-[min(94vw,64rem)] overflow-hidden rounded-2xl border-2 border-[#c59b5f]/60 bg-[#120c08] p-0 text-right text-[#f3ede2] shadow-[0_25px_70px_rgba(0,0,0,0.9)]"
+    >
+      <div className="relative flex max-h-[92vh] w-full flex-col overflow-hidden">
         {/* Modal Header */}
         <div className="flex items-center justify-between border-b border-[#2d2118] bg-[#0c0805] px-6 py-4">
           <div>
             <span className="text-[11px] font-semibold tracking-wider text-[#c59b5f] uppercase">
               סטודיו ייצור והתאמה אישית • CUSTOM ATELIER
             </span>
-            <h2 className="font-serif-hebrew text-xl font-bold text-[#fbf8f2] sm:text-2xl">
+            <h2 id={titleId} className="font-serif-hebrew text-xl font-bold text-[#fbf8f2] sm:text-2xl">
               {item.name}
             </h2>
           </div>
           <button
-            onClick={onClose}
+            type="button"
+            aria-label="סגירת חלון התאמה אישית"
+            onClick={() => dialogRef.current?.close()}
             className="rounded-full border border-[#c59b5f]/30 p-2 text-sm text-[#aa9c8d] transition hover:border-[#dfb37c] hover:text-white"
           >
             ✕
@@ -414,6 +468,12 @@ export function CustomizerModal({ item, onClose }: Props) {
               )}
             </div>
 
+            {validationError && (
+              <p role="alert" className="rounded-xl border border-[#e87a7a]/40 bg-[#2a1414]/80 px-3.5 py-2.5 text-xs text-[#f5b4b4]">
+                {validationError}
+              </p>
+            )}
+
             {/* Action Buttons */}
             <div className="flex gap-3 pt-2">
               <button
@@ -425,7 +485,7 @@ export function CustomizerModal({ item, onClose }: Props) {
               </button>
               <button
                 type="button"
-                onClick={onClose}
+                onClick={() => dialogRef.current?.close()}
                 className="rounded-full border border-[#2d2118] px-5 py-3 text-xs font-medium text-[#aa9c8d] hover:text-white"
               >
                 סגור
@@ -434,6 +494,6 @@ export function CustomizerModal({ item, onClose }: Props) {
           </div>
         </div>
       </div>
-    </div>
+    </dialog>
   );
 }

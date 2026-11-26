@@ -14,13 +14,31 @@ const frankRuhl = Frank_Ruhl_Libre({
   display: "swap",
 });
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://craftyso.co.il";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl),
   title: {
-    default: "SO | אביזרי אופנה ותפירה",
-    template: "%s | SO",
+    default: "SO | אביזרי אופנה, סדקית ותפירה",
+    template: "%s | SO Atelier",
   },
   description:
-    "SO - בוטיק אביזרי אופנה, סדקית ותפירה המוביל בישראל. תחרה, סרטים, פאצ'ים, אבזמים, כפתורים ועוד.",
+    "SO - בוטיק אביזרי אופנה, סדקית ותפירה המוביל בישראל. תחרה, סרטים, פאצ'ים, אבזמים, כפתורים ובדי יוקרה במחירי יבואן עם משלוח מהיר לכל הארץ.",
+  openGraph: {
+    type: "website",
+    locale: "he_IL",
+    siteName: "SO Atelier & Couture",
+    title: "SO | אביזרי אופנה, סדקית ותפירה",
+    description:
+      "בוטיק אביזרי אופנה, סדקית ותפירה המוביל בישראל. משלוח מהיר לכל הארץ ומחירי סיטונאות למעצבים.",
+    images: [{ url: "/logo/so-logo.png", alt: "SO Atelier & Couture" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "SO | אביזרי אופנה, סדקית ותפירה",
+    description:
+      "כפתורים, סרטים, פאצ'ים, אבזמים, תחרות מובחרות ובדי יוקרה — במחירי יבואן ישירים.",
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

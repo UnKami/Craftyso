@@ -57,6 +57,8 @@ export type Review = {
 
 export type OrderStatus = "pending" | "paid" | "failed" | "fulfilled" | "cancelled";
 
+export type ShippingMethod = "courier" | "registered_mail" | "pickup";
+
 export type ProductionStatus =
   | "pending_production"
   | "in_production"
@@ -84,6 +86,9 @@ export type Order = {
   id: string;
   userId?: string;
   items: OrderItem[];
+  subtotalIls?: number;
+  shippingMethod?: ShippingMethod;
+  shippingCostIls?: number;
   totalIls: number;
   status: OrderStatus;
   productionStatus?: ProductionStatus;
@@ -94,6 +99,12 @@ export type Order = {
   customerPhone: string;
   shippingAddress?: string;
   growTransactionId?: string;
+  payplusPageRequestUid?: string;
+  payplusTransactionUid?: string;
+  payplusApprovalNum?: string;
+  payplusVoucherNum?: string;
+  payplusInvoiceUrl?: string;
+  paidAt?: string;
   createdAt: string;
   updatedAt: string;
 };

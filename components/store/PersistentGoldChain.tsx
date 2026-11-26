@@ -35,7 +35,7 @@ export function PersistentGoldChain() {
     const ctx = canvas.getContext("2d", { alpha: true });
     if (!ctx) return;
 
-    let animId: number;
+    let animId: number | null = null;
     let width = (canvas.width = canvas.clientWidth || 90);
     let height = (canvas.height = window.innerHeight);
 
@@ -263,13 +263,35 @@ export function PersistentGoldChain() {
       for (const charm of charms) drawCharm(charm, 0, now);
       ctx.restore();
 
+      if (!reducedMotion && !document.hidden) {
+        animId = requestAnimationFrame(render);
+      } else {
+        animId = null;
+      }
+    }
+
+    function onVisibilityChange() {
+      if (reducedMotion) return;
+      if (document.hidden) {
+        if (animId !== null) {
+          cancelAnimationFrame(animId);
+          animId = null;
+        }
+      } else if (animId === null) {
+        animId = requestAnimationFrame(render);
+      }
+    }
+
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    if (reducedMotion) {
+      render();
+    } else if (!document.hidden) {
       animId = requestAnimationFrame(render);
     }
 
-    animId = requestAnimationFrame(render);
-
     return () => {
-      cancelAnimationFrame(animId);
+      if (animId !== null) cancelAnimationFrame(animId);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
       window.removeEventListener("resize", onResize);
       window.removeEventListener("scroll", onScroll);
     };

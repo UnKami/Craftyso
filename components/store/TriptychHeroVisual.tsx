@@ -46,22 +46,23 @@ const SIDE_PANEL_H = 460;
 export function TriptychHeroVisual() {
   const [index, setIndex] = useState(0);
   const indexRef = useRef(0);
+  const containerRef = useRef<HTMLDivElement>(null);
   const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
   const leftCanvasRef = useRef<HTMLCanvasElement>(null);
   const rightCanvasRef = useRef<HTMLCanvasElement>(null);
+  const isActiveRef = useRef(true);
   const current = HERO_SCENES[index];
 
   useEffect(() => {
     indexRef.current = index;
   }, [index]);
 
-  // All 4 clips stay mounted (preloaded) throughout — only the active one
-  // plays. Advancing swaps which is visible/playing instead of tearing
-  // down and re-fetching a video element every few seconds.
+  // Only play the active clip when the triptych is visible and motion is allowed.
   useEffect(() => {
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     videoRefs.current.forEach((v, i) => {
       if (!v) return;
-      if (i === index) {
+      if (i === index && !reducedMotion && isActiveRef.current) {
         v.currentTime = 0;
         v.play().catch(() => {});
       } else {
@@ -71,27 +72,29 @@ export function TriptychHeroVisual() {
   }, [index]);
 
   // Mirror the currently-playing video's frames into the two side canvases,
-  // cropped to their slice of the same virtual frame. This keeps all three
-  // panels showing live motion from a single decode — the side panels are
-  // pixel copies of the exact same frame the center is showing, so there is
-  // no independent playback clock left to drift out of sync.
+  // cropped to their slice of the same virtual frame. Pauses both the rAF loop
+  // and video playback whenever the hero is skipped off-screen
+  // (contentvisibilityautostatechange + IntersectionObserver fallback) or when
+  // the browser tab is hidden.
   useEffect(() => {
+    const container = containerRef.current;
     const leftCanvas = leftCanvasRef.current;
     const rightCanvas = rightCanvasRef.current;
     const leftCtx = leftCanvas?.getContext("2d");
     const rightCtx = rightCanvas?.getContext("2d");
-    if (!leftCanvas || !rightCanvas || !leftCtx || !rightCtx) return;
+    if (!container || !leftCanvas || !rightCanvas || !leftCtx || !rightCtx) return;
 
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     leftCanvas.width = SIDE_PANEL_W * dpr;
     leftCanvas.height = SIDE_PANEL_H * dpr;
     rightCanvas.width = SIDE_PANEL_W * dpr;
     rightCanvas.height = SIDE_PANEL_H * dpr;
 
-    let cancelled = false;
+    let rafId: number | null = null;
+    let isSkipped = false;
 
-    function draw() {
-      if (cancelled) return;
+    function drawFrame() {
       const video = videoRefs.current[indexRef.current];
       if (video && video.readyState >= 2 && leftCanvas && rightCanvas) {
         leftCtx!.drawImage(
@@ -117,12 +120,75 @@ export function TriptychHeroVisual() {
           rightCanvas.height
         );
       }
-      requestAnimationFrame(draw);
     }
-    draw();
+
+    function loop() {
+      if (!isActiveRef.current) {
+        rafId = null;
+        return;
+      }
+      drawFrame();
+      rafId = requestAnimationFrame(loop);
+    }
+
+    function syncActiveState() {
+      const shouldRun = !reducedMotion && !isSkipped && !document.hidden;
+      isActiveRef.current = shouldRun;
+      const activeVideo = videoRefs.current[indexRef.current];
+
+      if (shouldRun) {
+        activeVideo?.play().catch(() => {});
+        if (rafId === null) rafId = requestAnimationFrame(loop);
+      } else {
+        activeVideo?.pause();
+        if (rafId !== null) {
+          cancelAnimationFrame(rafId);
+          rafId = null;
+        }
+      }
+    }
+
+    const onVisibilityChange = () => syncActiveState();
+    document.addEventListener("visibilitychange", onVisibilityChange);
+
+    const onContentVisibilityChange = (event: Event) => {
+      const cvEvent = event as Event & { skipped?: boolean };
+      isSkipped = Boolean(cvEvent.skipped);
+      syncActiveState();
+    };
+
+    const supportsContentVisibility = "contentVisibility" in document.documentElement.style;
+    let observer: IntersectionObserver | null = null;
+
+    if (supportsContentVisibility) {
+      container.addEventListener("contentvisibilityautostatechange", onContentVisibilityChange);
+    } else {
+      observer = new IntersectionObserver(
+        (entries) => {
+          for (const entry of entries) {
+            isSkipped = !entry.isIntersecting;
+            syncActiveState();
+          }
+        },
+        { rootMargin: "200px" }
+      );
+      observer.observe(container);
+    }
+
+    if (reducedMotion) {
+      drawFrame();
+    } else {
+      syncActiveState();
+    }
 
     return () => {
-      cancelled = true;
+      isActiveRef.current = false;
+      if (rafId !== null) cancelAnimationFrame(rafId);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      if (supportsContentVisibility) {
+        container.removeEventListener("contentvisibilityautostatechange", onContentVisibilityChange);
+      }
+      observer?.disconnect();
     };
   }, []);
 
@@ -131,7 +197,10 @@ export function TriptychHeroVisual() {
   }
 
   return (
-    <div className="relative flex items-center justify-center select-none py-6 lg:py-8">
+    <div
+      ref={containerRef}
+      className="triptych-viewport relative flex items-center justify-center select-none py-6 lg:py-8"
+    >
       {/* Ambient warm radial glow with subtle luminous pulse */}
       <div className="pointer-events-none absolute -inset-6 rounded-full bg-[radial-gradient(circle,_rgba(212,175,55,0.28)_0%,_rgba(197,155,95,0.12)_45%,_transparent_75%)] blur-3xl animate-pulse" />
 
@@ -172,7 +241,7 @@ export function TriptychHeroVisual() {
                 }}
                 src={s.video}
                 poster={s.poster}
-                preload="auto"
+                preload={i === 0 ? "auto" : "metadata"}
                 muted
                 playsInline
                 onEnded={i === index ? handleEnded : undefined}

@@ -40,6 +40,8 @@ export function Footer() {
             <h3 className="font-serif-hebrew font-semibold tracking-wide text-[#eed3a2]">מידע ושירות</h3>
             <Link href="/about" className="block text-[#aa9c8d] transition hover:text-[#eed3a2]">אודותינו</Link>
             <Link href="/shipping" className="block text-[#aa9c8d] transition hover:text-[#eed3a2]">משלוחים והחזרות</Link>
+            <Link href="/terms" className="block text-[#aa9c8d] transition hover:text-[#eed3a2]">תקנון ומדיניות ביטולים</Link>
+            <Link href="/privacy" className="block text-[#aa9c8d] transition hover:text-[#eed3a2]">מדיניות פרטיות</Link>
             <Link href="/contact" className="block text-[#aa9c8d] transition hover:text-[#eed3a2]">צור קשר</Link>
           </div>
         </div>

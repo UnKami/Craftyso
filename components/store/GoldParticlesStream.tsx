@@ -39,12 +39,12 @@ export function GoldParticlesStream() {
     const ctx = canvas.getContext("2d", { alpha: true });
     if (!ctx) return;
 
-    let animId: number;
+    let animId: number | null = null;
     let width = (canvas.width = window.innerWidth);
     let height = (canvas.height = window.innerHeight);
 
-    // Balanced count: clearly visible and defined, yet calm and elegant
-    const count = 56;
+    // Balanced count: lighter on mobile to preserve battery & frame pacing
+    const count = width < 640 ? 24 : 56;
     const particles: CorkscrewParticle[] = [];
 
     // Scroll & Mouse reactive physics
@@ -217,13 +217,32 @@ export function GoldParticlesStream() {
         ctx.restore();
       }
 
+      if (!document.hidden) {
+        animId = requestAnimationFrame(render);
+      } else {
+        animId = null;
+      }
+    }
+
+    function onVisibilityChange() {
+      if (document.hidden) {
+        if (animId !== null) {
+          cancelAnimationFrame(animId);
+          animId = null;
+        }
+      } else if (animId === null) {
+        animId = requestAnimationFrame(render);
+      }
+    }
+
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    if (!document.hidden) {
       animId = requestAnimationFrame(render);
     }
 
-    animId = requestAnimationFrame(render);
-
     return () => {
-      cancelAnimationFrame(animId);
+      if (animId !== null) cancelAnimationFrame(animId);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
       window.removeEventListener("resize", onResize);
       window.removeEventListener("scroll", onScroll);
       window.removeEventListener("mousemove", onMouseMove);

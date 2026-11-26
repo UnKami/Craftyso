@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
@@ -16,6 +17,28 @@ import { ProductGallery } from "@/components/store/ProductGallery";
 import { ProductReviews } from "@/components/store/ProductReviews";
 
 type Props = { params: Promise<{ slug: string }> };
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const rawParams = await params;
+  const decodedSlug = decodeURIComponent(rawParams.slug);
+  const product =
+    (await getProductBySlug(decodedSlug)) || (await getProductBySlug(rawParams.slug));
+  if (!product) return { title: "מוצר לא נמצא" };
+
+  const description =
+    product.description?.slice(0, 155) ||
+    `${product.name} — מחיר ${formatIls(product.priceIls)}. זמין במלאי למשלוח מהיר בכל הארץ מבוטיק SO.`;
+
+  return {
+    title: product.name,
+    description,
+    openGraph: {
+      title: `${product.name} | SO Atelier`,
+      description,
+      images: product.images[0] ? [{ url: product.images[0], alt: product.name }] : undefined,
+    },
+  };
+}
 
 export default async function ProductPage({ params }: Props) {
   const rawParams = await params;

@@ -1,6 +1,10 @@
 @import "tailwindcss";
 
 :root {
+  color-scheme: dark;
+  accent-color: var(--brand);
+  scrollbar-color: #c99a65 #130e0b;
+
   --background: #0c0907;
   --foreground: #f3ede2;
 
@@ -41,6 +45,72 @@
 body {
   background: var(--background);
   color: var(--foreground);
+}
+
+/* Improved Hebrew typography wrapping (progressive enhancement) */
+h1, h2, h3, h4, h5, h6 {
+  text-wrap: balance;
+}
+
+p, blockquote, li {
+  text-wrap: pretty;
+}
+
+/* Defer rendering for below-the-fold sections to improve initial load & INP */
+.deferred-section {
+  content-visibility: auto;
+  contain-intrinsic-size: auto none auto 520px;
+}
+
+.triptych-viewport {
+  content-visibility: auto;
+  contain-intrinsic-size: auto none auto 580px;
+}
+
+/* Native <dialog> modal scroll containment & backdrop */
+dialog:modal {
+  overscroll-behavior: contain;
+}
+
+dialog::backdrop {
+  overflow: hidden;
+  overscroll-behavior: contain;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(8px);
+}
+
+/* Post-interaction form validation styling (excludes range sliders) */
+.atelier-field:not(input[type="range"]):user-invalid {
+  border-color: #e87a7a;
+  background-color: rgba(232, 122, 122, 0.08);
+}
+
+.atelier-field:not(input[type="range"]):user-valid {
+  border-color: rgba(127, 224, 155, 0.55);
+}
+
+.atelier-field-error {
+  display: none;
+  color: #f09494;
+  font-size: 0.75rem;
+  margin-top: 0.25rem;
+}
+
+.atelier-field:user-invalid ~ .atelier-field-error {
+  display: block;
+}
+
+/* Visually hidden utility for screen-reader live regions */
+.visually-hidden:where(:not(:focus-within, :active)) {
+  position: absolute !important;
+  clip-path: inset(50%) !important;
+  overflow: hidden !important;
+  width: 1px !important;
+  height: 1px !important;
+  margin: -1px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  white-space: nowrap !important;
 }
 
 /* Luxury Atelier Utility Classes */
@@ -214,8 +284,15 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .animate-watermark-float {
-    animation: none;
+  .animate-watermark-float,
+  .animate-marquee,
+  .animate-roll-offers,
+  .animate-gold-sheen,
+  .animate-triptych-left,
+  .animate-triptych-center,
+  .animate-triptych-right,
+  .animate-portrait-breathe {
+    animation: none !important;
   }
 }
 

@@ -269,7 +269,7 @@ export default async function HomePage() {
       </section>
 
       {/* Featured Products Section */}
-      <section className="relative mx-auto max-w-6xl px-4 py-16">
+      <section className="deferred-section relative mx-auto max-w-6xl px-4 py-16">
         <div className="mb-10">
           <LogoSeal />
         </div>
@@ -307,7 +307,7 @@ export default async function HomePage() {
 
       {/* Full Categories Explorer Section */}
       {categories.length > 0 && (
-        <section className="mx-auto max-w-6xl px-4 pb-16">
+        <section className="deferred-section mx-auto max-w-6xl px-4 pb-16">
           <div className="mb-8 flex items-end justify-between border-b border-[#2d2118] pb-4">
             <div>
               <span className="text-xs font-semibold tracking-wider text-[#c59b5f] uppercase">
@@ -331,7 +331,7 @@ export default async function HomePage() {
       )}
 
       {/* Atelier Banner / Callout */}
-      <section className="relative overflow-hidden border-t border-[#2d2118] bg-gradient-to-b from-[#140e0b] to-[#0c0907] py-16">
+      <section className="deferred-section relative overflow-hidden border-t border-[#2d2118] bg-gradient-to-b from-[#140e0b] to-[#0c0907] py-16">
         <LogoWatermark corner="center" size={300} opacity={0.06} />
 
         <div className="relative z-10 mx-auto flex max-w-4xl flex-col items-center px-4 text-center">
