@@ -3,35 +3,25 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { onAuthStateChanged } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
-import { auth, db } from "@/lib/firebase/client";
-
-type Status = "loading" | "guest" | "customer" | "admin";
+import { auth } from "@/lib/firebase/client";
 
 export function AccountButton() {
-  const [status, setStatus] = useState<Status>("loading");
+  const [signedIn, setSignedIn] = useState<boolean | null>(null);
 
   useEffect(() => {
-    return onAuthStateChanged(auth, async (user) => {
-      if (!user) {
-        setStatus("guest");
-        return;
-      }
-      try {
-        const snap = await getDoc(doc(db, "users", user.uid));
-        setStatus(snap.exists() ? "admin" : "customer");
-      } catch {
-        setStatus("customer");
-      }
+    return onAuthStateChanged(auth, (user) => {
+      setSignedIn(Boolean(user));
     });
   }, []);
 
-  const href =
-    status === "admin" ? "/admin" : status === "customer" ? "/account" : "/account/login";
+  // Always route to the personal area: /account renders orders directly when a
+  // session cookie exists and otherwise redirects to /account/login.
+  const href = signedIn === false ? "/account/login" : "/account";
 
   return (
     <Link
       href={href}
+      prefetch={false}
       className="flex h-10 w-10 items-center justify-center rounded-full border border-[#c59b5f]/40 text-[#dfb37c] transition-all hover:border-[#dfb37c] hover:text-white hover:bg-[#c59b5f]/10 hover:shadow-[0_0_15px_rgba(201,154,101,0.2)]"
       aria-label="אזור אישי"
       title="אזור אישי"
