@@ -3,7 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { getAdminUser } from "@/lib/auth/require-admin";
 import { adminDb } from "@/lib/firebase/admin";
-import type { ProductionStatus } from "@/lib/types";
+import { sendFactoryOrderNotification } from "@/lib/notifications/factory-email";
+import type { Order, ProductionStatus } from "@/lib/types";
 
 export async function updateProductionStatus(orderId: string, status: ProductionStatus) {
   const user = await getAdminUser();
@@ -49,4 +50,23 @@ export async function updateFactoryOrder(input: {
 
   revalidatePath("/admin/factory");
   revalidatePath("/admin/orders");
+}
+
+export async function sendFactoryEmailAction(
+  orderId: string,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const user = await getAdminUser();
+  if (!user) return { ok: false, error: "Unauthorized" };
+
+  const snap = await adminDb.collection("orders").doc(orderId).get();
+  if (!snap.exists) return { ok: false, error: "הזמנה לא נמצאה." };
+
+  const order: Order = { id: snap.id, ...(snap.data() as Omit<Order, "id">) };
+  const res = await sendFactoryOrderNotification(order);
+
+  revalidatePath("/admin/factory");
+  revalidatePath("/admin/orders");
+
+  if (!res.ok) return { ok: false, error: res.error };
+  return { ok: true };
 }

@@ -105,6 +105,8 @@ export type Order = {
   payplusVoucherNum?: string;
   payplusInvoiceUrl?: string;
   paidAt?: string;
+  factoryNotifiedAt?: string;
+  factoryNotificationError?: string;
   createdAt: string;
   updatedAt: string;
 };

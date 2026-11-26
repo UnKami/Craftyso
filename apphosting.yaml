@@ -61,3 +61,14 @@ env:
     secret: PAYPLUS_PAYMENT_PAGE_UID
     availability:
       - RUNTIME
+  # Automatic factory email notifications (Resend) — uncomment after running:
+  #   firebase apphosting:secrets:set RESEND_API_KEY
+  #   firebase apphosting:secrets:set FACTORY_NOTIFICATION_EMAIL
+  # - variable: RESEND_API_KEY
+  #   secret: RESEND_API_KEY
+  #   availability:
+  #     - RUNTIME
+  # - variable: FACTORY_NOTIFICATION_EMAIL
+  #   secret: FACTORY_NOTIFICATION_EMAIL
+  #   availability:
+  #     - RUNTIME

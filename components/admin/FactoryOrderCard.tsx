@@ -74,6 +74,15 @@ export function FactoryOrderCard({ order }: { order: Order }) {
           <span className="font-mono text-xs font-bold text-ink-muted">
             #{order.id.slice(0, 8)}
           </span>
+          {order.status === "paid" || order.status === "fulfilled" ? (
+            <span className="rounded-full border border-emerald-500/40 bg-emerald-500/15 px-2.5 py-0.5 text-xs font-bold text-emerald-400">
+              ✓ שולם — מאושר לייצור
+            </span>
+          ) : (
+            <span className="rounded-full border border-rose-500/40 bg-rose-500/15 px-2.5 py-0.5 text-xs font-bold text-rose-400">
+              ⚠ לא שולם ({order.status})
+            </span>
+          )}
           <span
             className={`rounded-full border px-2.5 py-0.5 text-xs font-bold ${statusInfo.color}`}
           >

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebase/admin";
 import { verifyPayPlusCallbackHash } from "@/lib/payplus/client";
+import { sendFactoryOrderNotification } from "@/lib/notifications/factory-email";
+import type { Order } from "@/lib/types";
 
 type PayPlusCallbackBody = {
   transaction_type?: string;
@@ -78,6 +80,21 @@ export async function POST(req: NextRequest) {
     if (invoiceUrl) update.payplusInvoiceUrl = invoiceUrl;
 
     await orderRef.update(update);
+
+    // Notify factory automatically once when payment is approved (idempotent).
+    const existing = snap.data() as Omit<Order, "id">;
+    if (isApproved && !existing.factoryNotifiedAt) {
+      const updatedOrder: Order = {
+        id: orderId,
+        ...existing,
+        ...(update as Partial<Order>),
+      };
+      const notifyRes = await sendFactoryOrderNotification(updatedOrder);
+      if (!notifyRes.ok) {
+        console.warn(`[payplus/webhook] Factory notification skipped/failed for ${orderId}: ${notifyRes.error}`);
+      }
+    }
+
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error("[payplus/webhook] Failed to update order:", err);
