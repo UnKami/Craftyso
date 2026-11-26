@@ -48,7 +48,8 @@ export default async function AccountPage() {
 
   const profile = await upsertAndMergeCustomerIdentity({
     uid: user.uid,
-    email: user.email,
+    email: user.email || null,
+    phone: user.phone || null,
   }).catch(() => null);
 
   const orders: Order[] = profile
@@ -67,7 +68,7 @@ export default async function AccountPage() {
           </h1>
           <p className="mt-1 text-sm text-[#aa9c8d]">
             {profile?.name ? `${profile.name} · ` : ""}
-            {user.email}
+            {user.email || user.phone}
           </p>
         </div>
         <LogoutButton />
@@ -171,7 +172,7 @@ export default async function AccountPage() {
 
       <LinkContactForm
         emails={profile?.emails ?? (user.email ? [user.email] : [])}
-        phones={profile?.phones ?? []}
+        phones={profile?.phones ?? (user.phone ? [user.phone] : [])}
       />
     </div>
   );

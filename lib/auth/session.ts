@@ -8,6 +8,7 @@ export const SESSION_COOKIE = "craftyso_session";
 export type SessionUser = {
   uid: string;
   email: string;
+  phone?: string;
   name?: string;
 };
 
@@ -19,7 +20,12 @@ export async function getSessionUser(): Promise<SessionUser | null> {
 
   try {
     const decoded = await adminAuth.verifySessionCookie(session, true);
-    return { uid: decoded.uid, email: decoded.email ?? "", name: decoded.name };
+    return {
+      uid: decoded.uid,
+      email: decoded.email ?? "",
+      phone: typeof decoded.phone_number === "string" ? decoded.phone_number : undefined,
+      name: decoded.name,
+    };
   } catch (err) {
     console.warn("[auth] session verification failed:", (err as Error).message);
     return null;
