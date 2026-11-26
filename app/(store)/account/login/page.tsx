@@ -20,11 +20,22 @@ function toIsraeliE164(raw: string): string {
   const trimmed = raw.trim();
   const digits = trimmed.replace(/\D/g, "");
   if (!digits) return "";
-  if (trimmed.startsWith("+")) return `+${digits}`;
-  if (digits.startsWith("972")) return `+${digits}`;
+  // Handle accidental "+972050..." or "972050..."
+  if (digits.startsWith("9720") && digits.length >= 12) {
+    return `+972${digits.slice(4)}`;
+  }
+  if (digits.startsWith("972") && digits.length >= 11) {
+    return `+${digits}`;
+  }
+  // Standard Israeli local format: 050-1234567 -> +972501234567
   if (digits.startsWith("0") && digits.length >= 9 && digits.length <= 10) {
     return `+972${digits.slice(1)}`;
   }
+  // Israeli mobile typed without leading 0: 508689077 -> +972508689077
+  if (digits.startsWith("5") && digits.length === 9) {
+    return `+972${digits}`;
+  }
+  if (trimmed.startsWith("+")) return `+${digits}`;
   return `+${digits}`;
 }
 
@@ -156,7 +167,14 @@ function AccountLoginContent() {
       console.error("[account/login] SMS send failed:", err);
       recaptchaRef.current?.clear();
       recaptchaRef.current = null;
-      setError("לא הצלחנו לשלוח קוד SMS למספר זה. בדקו את המספר ונסו שוב.");
+      const code = (err as { code?: string })?.code ?? "";
+      if (code === "auth/too-many-requests") {
+        setError("נשלחו יותר מדי בקשות SMS. המתינו מספר דקות או היכנסו עם קישור למייל.");
+      } else if (code === "auth/invalid-phone-number") {
+        setError("מספר הטלפון אינו תקין. הזינו מספר נייד ישראלי (לדוגמה 050-1234567).");
+      } else {
+        setError("לא הצלחנו לשלוח קוד SMS כרגע. ניתן לנסות שוב או להיכנס עם קישור חד-פעמי למייל.");
+      }
     } finally {
       setLoading(false);
     }
