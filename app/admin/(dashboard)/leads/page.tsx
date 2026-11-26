@@ -1,3 +1,4 @@
+import { requireTabAccess } from "@/lib/auth/require-admin";
 import { listLeads } from "@/lib/firebase/admin-queries";
 import { LeadStatusSelect } from "@/components/admin/LeadStatusSelect";
 import { AddLeadForm } from "@/components/admin/AddLeadForm";
@@ -10,6 +11,7 @@ const SOURCE_LABEL: Record<string, string> = {
 };
 
 export default async function LeadsPage() {
+  await requireTabAccess("leads");
   const leads = await listLeads();
 
   return (

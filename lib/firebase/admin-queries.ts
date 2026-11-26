@@ -77,6 +77,8 @@ export async function listContentPages(): Promise<ContentPage[]> {
 export async function listAdmins(): Promise<AdminUser[]> {
   return safe(async () => {
     const snap = await adminDb.collection("users").get();
-    return snap.docs.map((d) => d.data() as AdminUser);
+    return snap.docs
+      .map((d) => d.data() as AdminUser)
+      .filter((u) => u.role === "owner" || u.role === "manager" || u.role === "editor");
   }, []);
 }

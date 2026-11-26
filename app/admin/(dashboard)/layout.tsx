@@ -6,7 +6,7 @@ export default async function AdminDashboardLayout({ children }: { children: Rea
 
   return (
     <div className="flex min-h-screen flex-col md:flex-row">
-      <Sidebar email={user.email} />
+      <Sidebar email={user.email} role={user.role} allowedTabs={user.allowedTabs} />
       <main className="flex-1 bg-surface-muted p-4 md:p-8">{children}</main>
     </div>
   );

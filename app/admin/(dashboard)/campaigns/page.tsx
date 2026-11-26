@@ -1,3 +1,4 @@
+import { requireTabAccess } from "@/lib/auth/require-admin";
 import { listCampaigns } from "@/lib/firebase/admin-queries";
 import { AddCampaignForm } from "@/components/admin/AddCampaignForm";
 
@@ -10,6 +11,7 @@ const CHANNEL_LABEL: Record<string, string> = {
 };
 
 export default async function CampaignsPage() {
+  await requireTabAccess("campaigns");
   const campaigns = await listCampaigns();
 
   return (

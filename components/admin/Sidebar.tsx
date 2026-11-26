@@ -4,26 +4,31 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { ADMIN_TABS, canAccessTab } from "@/lib/auth/permissions";
+import type { AdminRole, AdminTabId } from "@/lib/types";
 
-const NAV = [
-  { href: "/admin", label: "סקירה כללית" },
-  { href: "/admin/factory", label: "ייצור במפעל" },
-  { href: "/admin/inventory", label: "מלאי וספקים" },
-  { href: "/admin/orders", label: "הזמנות" },
-  { href: "/admin/leads", label: "לידים" },
-  { href: "/admin/products", label: "מוצרים" },
-  { href: "/admin/categories", label: "קטגוריות" },
-  { href: "/admin/content", label: "תוכן" },
-  { href: "/admin/campaigns", label: "קמפיינים" },
-  { href: "/admin/social", label: "רשתות חברתיות" },
-  { href: "/admin/team", label: "צוות" },
-];
+function NavLinks({
+  pathname,
+  role,
+  allowedTabs,
+  onNavigate,
+}: {
+  pathname: string;
+  role: AdminRole;
+  allowedTabs?: AdminTabId[];
+  onNavigate?: () => void;
+}) {
+  const visibleItems = ADMIN_TABS.filter((item) =>
+    canAccessTab({ role, allowedTabs }, item.id),
+  );
 
-function NavLinks({ pathname, onNavigate }: { pathname: string; onNavigate?: () => void }) {
   return (
     <nav className="flex flex-1 flex-col gap-1">
-      {NAV.map((item) => {
-        const active = pathname === item.href;
+      {visibleItems.map((item) => {
+        const active =
+          item.href === "/admin"
+            ? pathname === "/admin"
+            : pathname === item.href || pathname.startsWith(`${item.href}/`);
         return (
           <Link
             key={item.href}
@@ -55,7 +60,15 @@ function AccountFooter({ email, onLogout }: { email: string; onLogout: () => voi
   );
 }
 
-export function Sidebar({ email }: { email: string }) {
+export function Sidebar({
+  email,
+  role,
+  allowedTabs,
+}: {
+  email: string;
+  role: AdminRole;
+  allowedTabs?: AdminTabId[];
+}) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
@@ -103,7 +116,12 @@ export function Sidebar({ email }: { email: string }) {
                 </svg>
               </button>
             </div>
-            <NavLinks pathname={pathname} onNavigate={() => setOpen(false)} />
+            <NavLinks
+              pathname={pathname}
+              role={role}
+              allowedTabs={allowedTabs}
+              onNavigate={() => setOpen(false)}
+            />
             <AccountFooter email={email} onLogout={handleLogout} />
           </aside>
         </div>
@@ -115,7 +133,7 @@ export function Sidebar({ email }: { email: string }) {
           <Image src="/logo/so-logo.png" alt="SO" width={960} height={590} className="h-7 w-auto" />
           <p className="mt-1 text-xs text-ink-muted">לוח ניהול</p>
         </div>
-        <NavLinks pathname={pathname} />
+        <NavLinks pathname={pathname} role={role} allowedTabs={allowedTabs} />
         <AccountFooter email={email} onLogout={handleLogout} />
       </aside>
     </>

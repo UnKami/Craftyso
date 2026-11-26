@@ -1,8 +1,10 @@
+import { requireTabAccess } from "@/lib/auth/require-admin";
 import { adminDb } from "@/lib/firebase/admin";
 import type { InventoryItem, RestockOrder } from "@/lib/types";
 import { InventoryTable } from "@/components/admin/InventoryTable";
 
 export default async function InventoryDashboardPage() {
+  await requireTabAccess("inventory");
   let items: InventoryItem[] = [];
   let restocks: RestockOrder[] = [];
 

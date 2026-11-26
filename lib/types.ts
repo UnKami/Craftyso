@@ -196,10 +196,25 @@ export type SocialPost = {
   updatedAt: string;
 };
 
-export type AdminRole = "owner" | "editor";
+export type AdminRole = "owner" | "manager" | "editor";
+
+export type AdminTabId =
+  | "overview"
+  | "orders"
+  | "factory"
+  | "inventory"
+  | "products"
+  | "categories"
+  | "leads"
+  | "content"
+  | "campaigns"
+  | "social"
+  | "team";
 
 export type AdminUser = {
   uid: string;
   email: string;
   role: AdminRole;
+  roleLabel?: string;
+  allowedTabs?: AdminTabId[];
 };

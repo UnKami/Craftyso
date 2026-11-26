@@ -1,4 +1,5 @@
 import { headers } from "next/headers";
+import { requireTabAccess } from "@/lib/auth/require-admin";
 import { adminDb } from "@/lib/firebase/admin";
 import { getOrCreateFactoryPortalToken } from "@/lib/factory-portal/token";
 import type { Order } from "@/lib/types";
@@ -6,6 +7,7 @@ import { FactoryOrderCard } from "@/components/admin/FactoryOrderCard";
 import { FactoryShareLinkCard } from "@/components/admin/FactoryShareLinkCard";
 
 export default async function FactoryDashboardPage() {
+  await requireTabAccess("factory");
   let orders: Order[] = [];
   let portalToken = "";
   try {

@@ -1,8 +1,10 @@
+import { requireTabAccess } from "@/lib/auth/require-admin";
 import { getCategories } from "@/lib/firebase/queries";
 import { listAllProducts } from "@/lib/firebase/admin-queries";
 import { CategoriesManager } from "@/components/admin/CategoriesManager";
 
 export default async function CategoriesAdminPage() {
+  await requireTabAccess("categories");
   const [categories, products] = await Promise.all([getCategories(), listAllProducts()]);
 
   const productCounts: Record<string, number> = {};

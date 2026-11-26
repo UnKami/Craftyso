@@ -1,6 +1,8 @@
+import { requireTabAccess } from "@/lib/auth/require-admin";
 import { listCampaigns, listLeads, listOrders, listAllProducts } from "@/lib/firebase/admin-queries";
 
 export default async function AdminOverviewPage() {
+  await requireTabAccess("overview");
   const [leads, orders, products, campaigns] = await Promise.all([
     listLeads(),
     listOrders(),

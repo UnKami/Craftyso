@@ -1,9 +1,11 @@
+import { requireTabAccess } from "@/lib/auth/require-admin";
 import { listAllProducts } from "@/lib/firebase/admin-queries";
 import { getCategories } from "@/lib/firebase/queries";
 import { AddProductForm } from "@/components/admin/AddProductForm";
 import { ProductsTable } from "@/components/admin/ProductsTable";
 
 export default async function ProductsPage() {
+  await requireTabAccess("products");
   const [products, categories] = await Promise.all([listAllProducts(), getCategories()]);
 
   return (

@@ -1,3 +1,4 @@
+import { requireTabAccess } from "@/lib/auth/require-admin";
 import { listSocialPosts } from "@/lib/firebase/admin-queries";
 import { AddSocialPostForm } from "@/components/admin/AddSocialPostForm";
 
@@ -9,6 +10,7 @@ const PLATFORM_LABEL: Record<string, string> = {
 };
 
 export default async function SocialPage() {
+  await requireTabAccess("social");
   const posts = await listSocialPosts();
 
   return (

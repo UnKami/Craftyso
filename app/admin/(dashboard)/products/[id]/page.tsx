@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { requireTabAccess } from "@/lib/auth/require-admin";
 import { getProductById, listReviewsForProduct } from "@/lib/firebase/admin-queries";
 import { getCategories } from "@/lib/firebase/queries";
 import { ProductImagesEditor } from "@/components/admin/ProductImagesEditor";
@@ -11,6 +12,7 @@ import { PublishToggle } from "@/components/admin/PublishToggle";
 type Props = { params: Promise<{ id: string }> };
 
 export default async function ProductDetailAdminPage({ params }: Props) {
+  await requireTabAccess("products");
   const rawParams = await params;
   const decodedId = decodeURIComponent(rawParams.id);
   const product = (await getProductById(decodedId)) || (await getProductById(rawParams.id));

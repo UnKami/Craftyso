@@ -1,7 +1,9 @@
+import { requireTabAccess } from "@/lib/auth/require-admin";
 import { listContentPages } from "@/lib/firebase/admin-queries";
 import { AddContentForm } from "@/components/admin/AddContentForm";
 
 export default async function ContentPagesAdmin() {
+  await requireTabAccess("content");
   const pages = await listContentPages();
 
   return (

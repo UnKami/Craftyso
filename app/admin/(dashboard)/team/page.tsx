@@ -1,24 +1,26 @@
-import { requireAdmin } from "@/lib/auth/require-admin";
+import { requireTabAccess } from "@/lib/auth/require-admin";
 import { listAdmins } from "@/lib/firebase/admin-queries";
 import { InviteAdminForm } from "@/components/admin/InviteAdminForm";
 import { AdminRow } from "@/components/admin/AdminRow";
 
 export default async function TeamPage() {
-  const currentUser = await requireAdmin();
+  const currentUser = await requireTabAccess("team");
   const admins = await listAdmins();
 
   return (
-    <div>
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-ink">צוות</h1>
-        {currentUser.role === "owner" && <InviteAdminForm />}
+    <div className="space-y-6">
+      <div>
+        <span className="text-xs font-semibold uppercase tracking-wider text-brand">
+          TEAM &amp; ROLE PERMISSIONS
+        </span>
+        <h1 className="text-2xl font-bold text-ink">מנהלים והרשאות גישה</h1>
+        <p className="mt-1 text-xs text-ink-muted">
+          הזמינו מנהלים נוספים וקבעו לכל אחד בדיוק אילו לשוניות יוכל לראות ולנהל (הזמנות, מפעל, מלאי,
+          מוצרים, קטגוריות ועוד).
+        </p>
       </div>
 
-      {currentUser.role !== "owner" && (
-        <p className="mb-4 text-sm text-ink-muted">
-          רק בעלים (Owner) יכולים להוסיף, להסיר או לשנות הרשאות של מנהלים.
-        </p>
-      )}
+      {currentUser.role === "owner" && <InviteAdminForm />}
 
       <ul className="divide-y divide-border rounded-2xl border border-border bg-surface">
         {admins.map((admin) => (
