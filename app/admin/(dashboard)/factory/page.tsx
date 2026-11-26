@@ -1,15 +1,30 @@
+import { headers } from "next/headers";
 import { adminDb } from "@/lib/firebase/admin";
+import { getOrCreateFactoryPortalToken } from "@/lib/factory-portal/token";
 import type { Order } from "@/lib/types";
 import { FactoryOrderCard } from "@/components/admin/FactoryOrderCard";
+import { FactoryShareLinkCard } from "@/components/admin/FactoryShareLinkCard";
 
 export default async function FactoryDashboardPage() {
   let orders: Order[] = [];
+  let portalToken = "";
   try {
-    const snap = await adminDb.collection("orders").orderBy("createdAt", "desc").get();
+    const [snap, token] = await Promise.all([
+      adminDb.collection("orders").orderBy("createdAt", "desc").get(),
+      getOrCreateFactoryPortalToken(),
+    ]);
     orders = snap.docs.map((d) => ({ id: d.id, ...d.data() } as Order));
+    portalToken = token;
   } catch (err) {
     console.warn("Could not fetch factory orders:", err);
   }
+
+  const hdrs = await headers();
+  const host = hdrs.get("x-forwarded-host") ?? hdrs.get("host");
+  const proto = hdrs.get("x-forwarded-proto") ?? "https";
+  const siteUrl =
+    process.env.NEXT_PUBLIC_SITE_URL?.trim() ||
+    (host ? `${proto}://${host}` : "https://craftyso.co.il");
 
   // Count metrics
   const pendingCount = orders.filter(
@@ -37,6 +52,9 @@ export default async function FactoryDashboardPage() {
           </p>
         </div>
       </div>
+
+      {/* Shareable Private Factory Portal Link */}
+      <FactoryShareLinkCard initialToken={portalToken} siteUrl={siteUrl} />
 
       {/* KPI Stats Bar */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">

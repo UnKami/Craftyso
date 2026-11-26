@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { getAdminUser } from "@/lib/auth/require-admin";
 import { adminDb } from "@/lib/firebase/admin";
+import { rotateFactoryPortalToken } from "@/lib/factory-portal/token";
 import { sendFactoryOrderNotification } from "@/lib/notifications/factory-email";
 import type { Order, ProductionStatus } from "@/lib/types";
 
@@ -69,4 +70,15 @@ export async function sendFactoryEmailAction(
 
   if (!res.ok) return { ok: false, error: res.error };
   return { ok: true };
+}
+
+export async function rotateFactoryPortalTokenAction(): Promise<
+  { ok: true; token: string } | { ok: false; error: string }
+> {
+  const user = await getAdminUser();
+  if (!user) return { ok: false, error: "Unauthorized" };
+
+  const token = await rotateFactoryPortalToken();
+  revalidatePath("/admin/factory");
+  return { ok: true, token };
 }
