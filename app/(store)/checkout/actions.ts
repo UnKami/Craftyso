@@ -41,13 +41,14 @@ function computeShippingCost(method: ShippingMethod, subtotalIls: number): numbe
 }
 
 async function resolveSiteUrl(): Promise<string> {
-  const configured = process.env.NEXT_PUBLIC_SITE_URL?.trim();
-  if (configured) return configured.replace(/\/+$/, "");
-
   const hdrs = await headers();
   const host = hdrs.get("x-forwarded-host") ?? hdrs.get("host");
   const proto = hdrs.get("x-forwarded-proto") ?? "https";
   if (host) return `${proto}://${host}`;
+
+  const configured = process.env.NEXT_PUBLIC_SITE_URL?.trim();
+  if (configured) return configured.replace(/\/+$/, "");
+
   return "https://craftyso.co.il";
 }
 
